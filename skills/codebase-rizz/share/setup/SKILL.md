@@ -54,8 +54,9 @@ Then:
 Print:
 
 > **Slack**
-> - Sender: messages will be posted as a **Slack app/bot** that you create in your workspace (one-time setup). Messages show as the bot, not as you.
-> - Requires: a Slack MCP server installed and authenticated, and the bot added to whatever channels you want it to post in
+> - Sender: messages post **as the Claude Slack app** in your workspace, using the connection between your Slack account and your Claude account. Recipients see them as coming from "Claude," not from you personally and not from a custom bot
+> - Requires: a workspace admin to have installed the Claude app from the Slack Marketplace, your Slack ↔ Claude connection in the App Home tab, the `slack@claude-plugins-official` plugin installed in Claude Code, and the Claude app invited to any channel you want posts to go to
+> - See `../../references/mcp-install.md` for the full setup flow
 
 Then follow the same detect / already-installed / not-installed flow as Gmail:
 - Detected → ask y/n → collect channel list (with or without `#`)
