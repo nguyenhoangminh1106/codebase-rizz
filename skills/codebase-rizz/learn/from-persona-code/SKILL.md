@@ -37,11 +37,28 @@ For every username in `rizz.config.json`'s `personas` array:
    - Does it *sharpen* an existing principle (adding a condition or a counterexample)? → propose as amendment
    - Is it just a repeat of what's already there? → skip, don't noise up the proposal
 
-4. **Synthesize the observations**. Things worth extracting:
-   - **New principles** — derived from patterns in the engineer's own code (e.g., always using `satisfies` over `as const` across multiple PRs)
-   - **New anti-patterns** — things they pushed back on in review
-   - **New example PRs** — representative merges worth citing
-   - **New review quotes** — direct quotes that capture their voice
+4. **Synthesize the observations.** Only extract things that would make the *user of this skill* genuinely better at code quality or design when they come back later. Apply this test to every candidate observation before including it:
+
+   > Would a mid-level engineer reading this learn something about architecture, data modeling, abstraction boundaries, state management, error handling, tradeoff reasoning, or design taste?
+
+   If the answer is no, drop it — even if it's new and even if it's repeated across PRs. Trivial stuff is not worth the shelf space in the persona file.
+
+   **Extract**:
+   - Non-obvious architectural choices (chose a store over a ref, flattened a nested context, broke a service into a repo layer)
+   - Tradeoff reasoning (picked A over B and said *why* — "refs couple unrelated features", "this would exhaust the connection pool")
+   - Reusable design patterns the engineer clearly favors, with the reason behind them
+   - Strong opinions expressed in review on someone else's design, where the opinion generalizes beyond the one PR
+   - Anti-patterns this engineer catches that others miss
+
+   **Skip**:
+   - Naming conventions (camelCase vs snake_case, renaming a variable)
+   - Formatting, whitespace, lint-fixable anything
+   - Obvious typos or one-word clarifications
+   - "Move this line up" / "extract this to a function" when the reason is just readability and there's no deeper principle
+   - Boilerplate refactors (e.g. "switched map to reduce") without a design reason
+   - Any observation that boils down to "the engineer knows the language well" — that's not persona signal, that's baseline competence
+
+   When in doubt, skip. The persona file is a knowledge base for the user, not a comprehensive log of every opinion the engineer has ever expressed.
 
 5. **Write the proposal** to `<data_dir>/proposed/personas/<username>-YYYY-MM-DD.md`, using the same schema as the persona file itself so the human can easily merge sections. Only include *additions*, not the full file — the human appends.
 

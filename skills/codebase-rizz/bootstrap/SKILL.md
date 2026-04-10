@@ -75,6 +75,7 @@ Create `<data_dir>/rizz.config.json` with sensible defaults. See `../references/
   "repo": "<owner/name from remote URL>",
   "default_branch": "<from `git symbolic-ref refs/remotes/origin/HEAD` or prompt>",
   "personas": [],
+  "trusted_reviewers": [],
   "crons": {
     "from_pr_comments": "0 6 * * *",
     "from_persona_code": "15 6 * * *",
@@ -87,7 +88,7 @@ Create `<data_dir>/rizz.config.json` with sensible defaults. See `../references/
 }
 ```
 
-Fill `personas` in step 6 as the user names engineers.
+Fill `personas` in step 6 as the user names engineers. After that, ask separately: "Which of these engineers do you trust to produce high-signal review comments? These are the reviewers `learn/from-pr-comments` will learn team patterns from — usually the senior folks whose taste you'd want codified. Pick any subset, or leave empty to disable pattern learning." Fill `trusted_reviewers` with the answer.
 
 ## Seed persona files from real PRs
 

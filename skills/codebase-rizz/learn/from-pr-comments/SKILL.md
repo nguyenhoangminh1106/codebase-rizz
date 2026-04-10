@@ -27,12 +27,15 @@ Since the last successful run of this cron. Track the last-run timestamp at `<da
      --json number,title,url,author,mergedAt --limit 100
    ```
 
-2. **Fetch review comments** for each PR:
+2. **Fetch review comments** for each PR, restricted to the trusted reviewer allowlist:
    ```bash
    gh api "repos/<repo>/pulls/<number>/comments" --paginate \
      --jq '.[] | {user: .user.login, body: .body, path: .path, line: .line, html_url: .html_url}'
    ```
-   Filter out comments from bots (anything with `[bot]` in the name) and comments shorter than 20 characters (usually "lgtm" or emoji).
+   Then filter the results:
+   - **Keep only comments from usernames in `trusted_reviewers`** (read from `<data_dir>/rizz.config.json`). If `trusted_reviewers` is empty or missing, stop the entire run and tell the user to configure it — this cron must never learn from an uncurated firehose
+   - Drop anything with `[bot]` in the username as a belt-and-suspenders check, even if a bot somehow ended up on the allowlist
+   - Drop comments shorter than 20 characters (usually "lgtm" or emoji)
 
 3. **Cluster themes**. For each comment, extract the underlying principle — not the specific fix, but the general rule. "You should use `findUnique` here" becomes "prefer findUnique over findFirst when querying a unique key." Group similar principles across comments.
 
@@ -76,6 +79,7 @@ Since the last successful run of this cron. Track the last-run timestamp at `<da
 
 ## Failure modes
 
+- **`trusted_reviewers` missing or empty in config** — stop the run, tell the user to add at least one username to `trusted_reviewers` in `rizz.config.json`, do not update the last-run timestamp. This is intentional: an unconfigured allowlist means the cron has no authority to learn from anyone, and the right fix is always a config change, never a silent fallback
 - **gh rate limit** — bail gracefully, don't update the last-run timestamp, the next run will pick up where this one left off
 - **No new PRs** — touch the last-run timestamp, write a proposal file with just a "nothing to propose" line, return
 - **`patterns.md` missing** — tell the user to run `bootstrap` first, don't auto-create
