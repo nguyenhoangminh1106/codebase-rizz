@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-track-assign
+name: track-assign
 description: Record that a specific engineer is building a specific feature. Updates <data_dir>/feature-ownership.md with an entry including engineer GitHub username, feature description, and start date. Use when the user says "Minh is working on X", "I'm starting the Y refactor", or similar ownership declarations.
 ---
 

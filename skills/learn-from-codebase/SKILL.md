@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-learn-from-codebase
+name: learn-from-codebase
 description: Weekly cron that picks one un-documented feature from the codebase and writes a narrative technical article about it — opened with a real human moment, grounded in direct PR/Slack quotes, structured around case studies, and ending on how the pattern generalizes. Saves to <data_dir>/articles/. Use when the user wants to deeply understand a feature, or let it run on schedule to build up a library of codebase knowledge.
 ---
 

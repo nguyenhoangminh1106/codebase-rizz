@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-rollback
+name: rollback
 description: Reverse a previous auto-review merge by reading the audit log, showing recent merges with their reasons, and letting the user pick any to undo. Removes the merged content from patterns.md or the persona file and (optionally) restores the item to a fresh proposal file for re-review. Use when the user reviews their auto-review audit log and spots a merge that was wrong.
 ---
 

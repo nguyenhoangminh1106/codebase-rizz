@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-share
+name: share
 description: Send codebase-rizz updates (new proposed patterns, new articles, ownership mismatches) out to configured channels — Gmail via Gmail MCP, Slack via Slack MCP, or a markdown fallback file if nothing is configured. Reads notification settings from rizz.config.json. Use when the user runs `share` manually, or when a cron invokes it at the end of a learn pipeline.
 ---
 

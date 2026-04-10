@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-track-reconcile
+name: track-reconcile
 description: Daily cron that checks feature-ownership.md against actual PR activity. Moves completed features from Active to Completed, flags mismatches where the recorded engineer differs from the actual PR author, and prunes stale active entries. Reports findings — never silently rewrites ownership.
 ---
 

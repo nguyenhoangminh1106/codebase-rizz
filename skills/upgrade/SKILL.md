@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-upgrade
+name: upgrade
 description: Migrate an already-bootstrapped repo (or every repo in the registry) from an older version of codebase-rizz to the current one. Reads CHANGELOG.md to find out what changed between versions, walks the user through each new feature, updates rizz.config.json, generates any new launchd plists, and writes the new version number. Use whenever the user reinstalls codebase-rizz and wants to take advantage of new features without re-bootstrapping.
 ---
 

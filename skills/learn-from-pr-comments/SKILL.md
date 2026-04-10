@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-learn-from-pr-comments
+name: learn-from-pr-comments
 description: Scrape merged PR review comments from the configured repo, cluster recurring themes, and propose new patterns for patterns.md. Runs as a daily cron but can be invoked manually. Writes proposals to <data_dir>/proposed/patterns/ — never edits patterns.md directly. Human merges.
 ---
 

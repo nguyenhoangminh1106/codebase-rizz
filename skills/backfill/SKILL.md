@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-backfill
+name: backfill
 description: Interactive one-time backfill for mature codebases. Scans historical merged PRs in a user-described scope, applies a strict quality filter (only observations that teach code quality, design, or tradeoff reasoning), and writes a single capped proposal file for patterns and persona updates. Never auto-merges, never generates articles. Use when a user has just bootstrapped codebase-rizz on a codebase with months or years of history and wants to seed the knowledge base instead of waiting weeks for the daily crons to accumulate signal.
 ---
 

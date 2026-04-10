@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-learn-auto-review
+name: learn-auto-review
 description: Opt-in weekly cron that reads pending proposals, has Claude review each one, and either merges it into patterns.md / persona files, rejects it as noise, or skips it for human review. Off by default — users opt in during bootstrap. Every decision is logged and reversible via the rollback subskill. Use when the user wants codebase-rizz to reduce their manual merge workload without losing auditability.
 ---
 

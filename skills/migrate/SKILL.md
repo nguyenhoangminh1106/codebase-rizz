@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-migrate
+name: migrate
 description: Move a repo's codebase-rizz data between global storage (~/.codebase-rizz/repos/<slug>/) and repo-local storage (<repo>/.codebase-rizz/). Copies all files, updates the registry, and handles gitignore. Use when a solo user wants to start sharing with their team, or when a team wants to pull shared knowledge back to private storage.
 ---
 

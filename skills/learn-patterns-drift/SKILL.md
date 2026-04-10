@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-patterns-drift
+name: learn-patterns-drift
 description: Weekly cron that checks whether any patterns in patterns.md are being violated in recently merged code, suggesting the pattern is either stale or being ignored. Writes proposals for removal or re-emphasis to <data_dir>/proposed/patterns/. Never removes patterns directly.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-code-like-auto
+name: code-like-auto
 description: Given a coding task, pick the best-matching engineer persona for the current repo and generate code in their style. Reads all personas in <data_dir>/personas/, matches against the task, and delegates to code-like-person with the chosen persona. Use when the user wants code "in our team's style" but hasn't named a specific engineer, or says something like "how would we write this".
 ---
 

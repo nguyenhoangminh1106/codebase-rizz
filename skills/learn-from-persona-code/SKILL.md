@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-learn-from-persona-code
+name: learn-from-persona-code
 description: For each tracked engineer, scan their recently merged PRs and propose updates to their persona file — new principles, new anti-patterns, new example PRs, new review quotes. Runs as a daily cron but can be invoked manually. Writes to <data_dir>/proposed/personas/. Never edits persona files directly.
 ---
 

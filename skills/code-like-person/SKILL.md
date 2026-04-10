@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-code-like-person
+name: code-like-person
 description: Generate code in a specific named engineer's style, using their persona file from <data_dir>/personas/. Called by code-like-auto once a persona is chosen, or directly when the user names an engineer ("write this like Minh would"). Requires a persona name matching an existing file.
 ---
 

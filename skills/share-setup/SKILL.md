@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-share-setup
+name: share-setup
 description: Interactive first-time setup for codebase-rizz notifications. Detects which notification MCPs (Gmail, Slack) are available in the current Claude Code session, explains the sender model for each, instructs the user how to install any missing MCP server, and writes the notifications block to rizz.config.json. Invoked automatically at the end of bootstrap, or manually when the user wants to reconfigure.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-review
+name: review
 description: Self-review a diff or branch against the team's patterns.md checklist (resolved from the codebase-rizz registry). Flags violations, cites the specific pattern number and reason, and suggests fixes. Use before the user opens a PR, or whenever they say "review this" / "check my diff" / "is this following our conventions".
 ---
 

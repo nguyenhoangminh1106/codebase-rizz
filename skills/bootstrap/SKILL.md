@@ -1,5 +1,5 @@
 ---
-name: codebase-rizz-bootstrap
+name: bootstrap
 description: First-run setup for codebase-rizz in a new repo. Asks whether to store knowledge globally (private, no repo footprint) or repo-local (committed, team-shared), creates the chosen data directory, verifies gh CLI access, asks for tracked engineers by GitHub username, and seeds initial persona files from each engineer's recent merged PRs. Use when the user is adopting codebase-rizz in a new codebase or adding engineers to an already-bootstrapped one.
 ---
 
