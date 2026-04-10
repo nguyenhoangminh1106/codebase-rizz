@@ -10,7 +10,7 @@
       "name": "codebase-rizz",
       "description": "Learn any codebase's style, track who builds what, generate code in a specific engineer's voice, and get smarter every day from merged PRs. Includes bootstrap, review, learn crons, persona-based code generation, backfill for mature codebases, notifications via Gmail/Slack MCP, and opt-in auto-review with rollback.",
       "version": "3.0.0",
-      "source": ".",
+      "source": "..",
       "keywords": [
         "codebase",
         "learning",
