@@ -5,20 +5,33 @@
     "name": "Minh Nguyen",
     "url": "https://github.com/nguyenhoangminh1106"
   },
+  "metadata": {
+    "version": "3.0.0"
+  },
   "plugins": [
     {
       "name": "codebase-rizz",
       "description": "Learn any codebase's style, track who builds what, generate code in a specific engineer's voice, and get smarter every day from merged PRs. Includes bootstrap, review, learn crons, persona-based code generation, backfill for mature codebases, notifications via Gmail/Slack MCP, and opt-in auto-review with rollback.",
-      "version": "3.0.0",
-      "source": "..",
-      "keywords": [
-        "codebase",
-        "learning",
-        "pr-review",
-        "personas",
-        "code-quality",
-        "team-conventions",
-        "knowledge-base"
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/bootstrap",
+        "./skills/backfill",
+        "./skills/review",
+        "./skills/code-like-auto",
+        "./skills/code-like-person",
+        "./skills/learn-from-pr-comments",
+        "./skills/learn-from-persona-code",
+        "./skills/learn-from-codebase",
+        "./skills/learn-patterns-drift",
+        "./skills/learn-auto-review",
+        "./skills/rollback",
+        "./skills/track-assign",
+        "./skills/track-reconcile",
+        "./skills/migrate",
+        "./skills/share",
+        "./skills/share-setup",
+        "./skills/upgrade"
       ],
       "homepage": "https://github.com/nguyenhoangminh1106/codebase-rizz",
       "license": "MIT"
