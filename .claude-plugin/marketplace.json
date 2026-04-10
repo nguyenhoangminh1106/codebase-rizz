@@ -1,0 +1,27 @@
+{
+  "name": "codebase-rizz",
+  "description": "codebase-rizz marketplace — single plugin that learns any codebase's lived wisdom and uses it to generate, review, and teach.",
+  "owner": {
+    "name": "Minh Nguyen",
+    "url": "https://github.com/nguyenhoangminh1106"
+  },
+  "plugins": [
+    {
+      "name": "codebase-rizz",
+      "description": "Learn any codebase's style, track who builds what, generate code in a specific engineer's voice, and get smarter every day from merged PRs. Includes bootstrap, review, learn crons, persona-based code generation, backfill for mature codebases, notifications via Gmail/Slack MCP, and opt-in auto-review with rollback.",
+      "version": "3.0.0",
+      "source": ".",
+      "keywords": [
+        "codebase",
+        "learning",
+        "pr-review",
+        "personas",
+        "code-quality",
+        "team-conventions",
+        "knowledge-base"
+      ],
+      "homepage": "https://github.com/nguyenhoangminh1106/codebase-rizz",
+      "license": "MIT"
+    }
+  ]
+}

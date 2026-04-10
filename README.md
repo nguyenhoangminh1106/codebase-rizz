@@ -20,23 +20,33 @@ Every codebase has two layers of knowledge. The first is the code itself — fil
 
 ## Install
 
-The recommended way is installing as a Claude Code plugin. Inside any Claude Code session:
+The recommended way is installing via the Claude Code plugin system. It's a two-step process: add the marketplace, then install the plugin.
+
+**Step 1 — Add the marketplace** (one-time):
 
 ```
-/plugin install codebase-rizz@nguyenhoangminh1106
+/plugin marketplace add nguyenhoangminh1106/codebase-rizz
 ```
 
-This installs all the skills under the `/codebase-rizz:*` namespace. Your global data directory at `~/.codebase-rizz/` is created on first use by `/codebase-rizz:bootstrap`.
+This tells Claude Code where to find the plugin. It reads the `.claude-plugin/marketplace.json` file at the root of this repo and registers the plugin. The marketplace is named `codebase-rizz` by default.
+
+**Step 2 — Install the plugin**:
+
+```
+/plugin install codebase-rizz@codebase-rizz
+```
+
+The first `codebase-rizz` is the plugin name, the second is the marketplace name. This installs all 17 skills under the `/codebase-rizz:*` namespace. Your global data directory at `~/.codebase-rizz/` is created on first use by `/codebase-rizz:bootstrap`.
 
 ### Fallback: curl install
 
-If you don't want to use the plugin system, a fallback script is available. It copies the plugin into `~/.claude/plugins/codebase-rizz/` and creates the data directory:
+If you don't want to use the plugin/marketplace system, a fallback script is available. It copies the plugin into `~/.claude/plugins/codebase-rizz/` and creates the data directory:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nguyenhoangminh1106/codebase-rizz/main/install.sh | bash
 ```
 
-Re-running is safe — it upgrades the skill code in place and never touches your data.
+Re-running is safe — it upgrades the plugin code in place and never touches your data.
 
 ## Getting started
 
@@ -138,7 +148,16 @@ All learning crons write proposals — they never edit your knowledge files dire
 
 ## Upgrading
 
-Re-running the install script (or `/plugin update codebase-rizz` if available) is safe — it upgrades the skill code in place and never touches your data. After upgrading, if the new version has new features, run:
+To pull the latest version of the plugin:
+
+```
+/plugin marketplace update codebase-rizz
+/plugin update codebase-rizz@codebase-rizz
+```
+
+Or, if you installed via the curl fallback, just re-run the install script. Either path is safe — plugin code is replaced in place and your data at `~/.codebase-rizz/` is untouched.
+
+After upgrading, if the new version has new features to opt into, run:
 
 ```
 /codebase-rizz:upgrade
