@@ -29,6 +29,59 @@ Fields that don't apply to a version are omitted (not set to `null` or empty).
 
 ---
 
+## v3
+
+- **scope**: all_repos
+- **title**: Restructure as a Claude Code plugin with per-skill slash commands
+- **new_config_keys**:
+  - `version` (new default: `3`) — bumped to track the restructure
+- **new_subskills**: (none — restructure only, no new functionality)
+- **migration**: The skill source layout changed from a single nested skill with subskill directories to a plugin with one flat skill per directory under `skills/`. User data and config are **unchanged** — everything in `~/.codebase-rizz/` and in repo-local `.codebase-rizz/` directories keeps working without modification. Only the skill code on disk at `~/.claude/skills/codebase-rizz/` (or wherever the previous install placed it) needs to be replaced. The recommended replacement path is `/plugin install codebase-rizz@nguyenhoangminh1106`. The `install.sh` fallback script copies the new layout into `~/.claude/plugins/codebase-rizz/`. After the new plugin is installed, `upgrade` should only bump the `version` field in each repo's `rizz.config.json` from 2 to 3 — no config keys are added or removed. Old nested-path slash commands (if any users were invoking them) are replaced with new flat slash commands under the `/codebase-rizz:*` namespace.
+- **details**: |
+    v3 is a **structural release**. Nothing about what the skill does has
+    changed — all the learning, personas, review, backfill, auto-review, and
+    notification features from v2 are intact. What changed is how Claude Code
+    exposes the skill.
+
+    In v1 and v2, the skill was a single skill with nested SKILL.md files for
+    each subskill. Claude Code's slash command system doesn't actually expose
+    nested SKILL.md files as invokable commands — that was my misunderstanding
+    of the skill directory format. Users could only invoke `/codebase-rizz`
+    as a single slash command and rely on natural-language dispatch to pick
+    a subskill, which was fragile and unpredictable.
+
+    v3 fixes this by restructuring the repo as a **Claude Code plugin** with
+    one flat skill per directory. Every capability is now independently
+    invokable via a `/codebase-rizz:<name>` slash command:
+      /codebase-rizz:bootstrap
+      /codebase-rizz:review
+      /codebase-rizz:code-like-auto
+      /codebase-rizz:learn-from-pr-comments
+      /codebase-rizz:backfill
+      /codebase-rizz:upgrade
+      (and so on)
+
+    There are 17 slash commands in total.
+
+    Reference material that used to live under `references/` is now in
+    `skills/_shared/` (prefixed with underscore so Claude Code ignores it as
+    a skill candidate). Paths in every SKILL.md were updated.
+
+    The cross-skill delegation that existed in v1/v2 (e.g. bootstrap
+    "delegating" to share-setup) no longer exists — skills in a plugin are
+    siblings, not parent/child. Where delegation was needed, the pattern is
+    now: the first skill finishes, then tells the user to run the next slash
+    command. For inter-skill data passing (e.g. auto-review wanting to
+    notify via share), the pattern is a file-based handoff queue instead of
+    a direct call.
+
+    No user data migrates. Your personas, patterns, articles, and config are
+    all preserved exactly as they were. `/codebase-rizz:upgrade` just bumps
+    the `version` field in each repo's config from 2 to 3 and prints a
+    one-liner confirming the structural migration is done.
+
+---
+
 ## v2
 
 - **scope**: all_repos
