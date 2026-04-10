@@ -94,6 +94,9 @@ The skill uses the same layout either way. Every subskill resolves the current r
 | `learn/from-persona-code` | Daily cron — propose persona updates |
 | `learn/from-codebase` | Weekly cron — write a technical article about one feature |
 | `learn/patterns-drift` | Weekly cron — flag patterns being ignored |
+| `learn/auto-review` | Opt-in weekly cron — Claude reviews proposals and merges the clearly-good ones (off by default) |
+| `rollback` | Undo a recent auto-review merge via the audit log |
+| `upgrade` | Migrate an existing setup to a newer version of codebase-rizz without re-bootstrapping |
 | `track/assign` | Record that an engineer is building a feature |
 | `track/reconcile` | Daily cron — verify ownership against real PR activity |
 | `migrate` | Move a repo's data between global and repo-local storage |
@@ -108,6 +111,18 @@ All learning crons write proposals — they never edit your knowledge files dire
 2. **Per-repo isolation.** One repo's personas don't bleed into another's
 3. **Personas are data.** Adding an engineer is a new markdown file, not a code change
 4. **Explain the why.** Every rule ships with the reason, usually linked to a PR comment
+
+## Upgrading
+
+Re-running the install script is safe — it upgrades the skill code in place and never touches your data. After re-installing, the script tells you whether any of your existing repos have new features to opt into. If they do, run:
+
+```
+/codebase-rizz upgrade
+```
+
+from any tracked repo. Upgrade walks you through what's new version by version and lets you opt into each new feature per repo. Your existing config is preserved. Nothing is changed silently.
+
+See [CHANGELOG.md](./CHANGELOG.md) for the list of versions and what changed.
 
 ## Status
 

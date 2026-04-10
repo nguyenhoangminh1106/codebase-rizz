@@ -71,6 +71,19 @@ launchctl unload ~/Library/LaunchAgents/com.codebase-rizz.<slug>.<cron-key>.plis
 rm ~/Library/LaunchAgents/com.codebase-rizz.<slug>.<cron-key>.plist
 ```
 
+## Cron key list
+
+| Config key | Subskill | Default schedule | Default mode |
+|---|---|---|---|
+| `from_pr_comments` | `learn/from-pr-comments` | daily 6:00 | always on |
+| `from_persona_code` | `learn/from-persona-code` | daily 6:15 | always on |
+| `track_reconcile` | `track/reconcile` | daily 7:00 | always on |
+| `from_codebase` | `learn/from-codebase` | Sunday 9:00 | always on |
+| `patterns_drift` | `learn/patterns-drift` | Sunday 9:30 | always on |
+| `auto_review` | `learn/auto-review` | Sunday 10:00 | **opt-in** via `auto_review.mode` |
+
+The five "always on" crons only write to `<data_dir>/proposed/` — they never touch knowledge files. `auto_review` is the only cron with permission to modify `patterns.md` and persona files, and only if the user has explicitly opted in. Bootstrap will not generate a launchd plist for `auto_review` unless `auto_review.mode` is `dry_run` or `on`.
+
 ## Cron expression translation
 
 Standard 5-field cron (`min hour dom mon dow`) maps to launchd's `StartCalendarInterval` dict. Only the fields that are specific numbers are included; wildcards are omitted:

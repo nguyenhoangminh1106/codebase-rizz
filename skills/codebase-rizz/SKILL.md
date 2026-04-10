@@ -56,6 +56,9 @@ When the user asks for something, load the matching subskill file:
 | "Update personas from their recent code" (cron) | `learn/from-persona-code/SKILL.md` |
 | "Write an article about a feature" (weekly cron) | `learn/from-codebase/SKILL.md` |
 | "Check if any patterns are stale" (weekly cron) | `learn/patterns-drift/SKILL.md` |
+| "Have Claude review proposals and merge the good ones" (opt-in weekly cron) | `learn/auto-review/SKILL.md` |
+| "Undo a recent auto-review merge" | `rollback/SKILL.md` |
+| "I just reinstalled — what's new and how do I opt in?" | `upgrade/SKILL.md` |
 | "Track that Minh is building the CRM quick actions" | `track/assign/SKILL.md` |
 | Daily reconcile of ownership vs actual PR authors | `track/reconcile/SKILL.md` |
 | "Move this repo's rizz data from global to repo-local (or back)" | `migrate/SKILL.md` |
@@ -66,12 +69,17 @@ If the user's request is ambiguous, ask which subskill they want before loading.
 
 ## Shared preconditions
 
-Every subskill except `bootstrap` and `migrate` does these checks in order before doing anything else:
+Every subskill except `bootstrap`, `migrate`, and `upgrade` does these checks in order before doing anything else:
 
 1. **Resolve the repo's `data_dir`** via `references/paths.md`. If the current repo isn't in the registry, tell the user to run `bootstrap` first — don't silently create files
 2. **Run the gh preflight** if the subskill touches GitHub. See `references/gh-preflight.md`. Cached per session so it only runs once
+3. **Check the config version.** Read `version` from the resolved `<data_dir>/rizz.config.json`. Compare against the highest version in `CHANGELOG.md` at the skill root. If the config is behind, print one line at the top of the response:
 
-If either check fails, stop and print the specific remediation. No silent fallbacks.
+   > Heads up — your config is v<N>, the skill is on v<M>. Run `/codebase-rizz upgrade` to see what's new. (Continuing with current config.)
+
+   This is a **soft warning**. It does not block the subskill from running. Missing `version` field is treated as v1. Don't print anything if the config is current.
+
+If any of checks 1 or 2 fail, stop and print the specific remediation. No silent fallbacks. Check 3 never blocks.
 
 ## Design principles
 
@@ -88,6 +96,7 @@ If either check fails, stop and print the specific remediation. No silent fallba
 - `references/paths.md` — how to resolve `data_dir` from the registry; slug derivation; storage modes
 - `references/gh-preflight.md` — the 4-step GitHub CLI check
 - `references/persona-schema.md` — the format every persona file must follow
-- `references/config-schema.md` — the format of `rizz.config.json` (including the notifications block)
+- `references/config-schema.md` — the format of `rizz.config.json` (including the notifications and auto_review blocks)
 - `references/crons.md` — launchd plist template, cron expression translation, loading/disabling
 - `references/mcp-install.md` — install instructions for Gmail and Slack MCP servers
+- `CHANGELOG.md` (at the skill root, copied during install) — structured version history consumed by `upgrade/`

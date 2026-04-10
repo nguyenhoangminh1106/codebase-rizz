@@ -8,6 +8,7 @@ The file lives inside the repo's data directory regardless of storage mode — i
 
 ```json
 {
+  "version": 2,
   "repo": "paraform-xyz/paraform",
   "default_branch": "main",
   "personas": ["minh2", "anthnykr", "taneliang", "owen-paraform"],
@@ -17,7 +18,12 @@ The file lives inside the repo's data directory regardless of storage mode — i
     "from_persona_code": "15 6 * * *",
     "track_reconcile": "0 7 * * *",
     "from_codebase": "0 9 * * 0",
-    "patterns_drift": "30 9 * * 0"
+    "patterns_drift": "30 9 * * 0",
+    "auto_review": "0 10 * * 0"
+  },
+  "auto_review": {
+    "mode": "off",
+    "max_merges_per_run": 5
   },
   "ignore_paths": [
     "lib/generated/**",
@@ -48,6 +54,7 @@ The file lives inside the repo's data directory regardless of storage mode — i
 
 ## Fields
 
+- **`version`** (required, integer) — schema version of this config file. Bootstrap writes the current skill version (from `CHANGELOG.md`). The `upgrade` subskill uses this to know which migrations to run. A missing `version` field is treated as v1 for backward compatibility with configs written before the version field existed
 - **`repo`** (required) — `owner/name` slug, used by every `gh` call
 - **`default_branch`** (required) — branch name the crons target for "merged since yesterday" queries
 - **`personas`** (required) — list of GitHub usernames this repo tracks. Every entry must have a corresponding file under `personas/`. `bootstrap` adds entries here; `learn/from-persona-code` reads it to know whose PRs to scrape
@@ -56,6 +63,7 @@ The file lives inside the repo's data directory regardless of storage mode — i
 - **`ignore_paths`** — glob patterns of files the learning crons should not read. Generated code, lockfiles, and vendored deps add noise to pattern extraction
 - **`min_pr_comment_signal`** — how many times a review comment theme must appear across recent PRs before `learn/from-pr-comments` proposes it as a pattern. Default 2. Higher = fewer, higher-confidence proposals
 - **`notifications`** — optional. Configures the `share/` subskill that sends updates (new patterns, new articles, ownership mismatches) out to Gmail and/or Slack. If omitted or `enabled: false`, the skill writes a markdown fallback to `<data_dir>/shared/` that the user can copy-paste anywhere. See the "Notifications" section below for the full shape
+- **`auto_review`** — optional. Opt-in configuration for the `learn/auto-review` cron that can actually merge proposals into `patterns.md` and persona files. **Off by default** — if this block is missing or `mode: "off"`, the auto-review cron never runs even if it's in the `crons` map. See "Auto-review" section below
 
 ## Cron key → subskill mapping
 
@@ -66,6 +74,7 @@ The file lives inside the repo's data directory regardless of storage mode — i
 | `track_reconcile` | `track/reconcile` |
 | `from_codebase` | `learn/from-codebase` |
 | `patterns_drift` | `learn/patterns-drift` |
+| `auto_review` | `learn/auto-review` (opt-in only, see `auto_review.mode`) |
 
 If a key is missing from `crons`, bootstrap does not generate a launchd agent for it. A user who only wants the review subskill and no learning loop can set `crons: {}`.
 
@@ -82,6 +91,18 @@ The `notifications` block is structured so every channel is opt-in independently
 
 When a notification is sent, the `share/` subskill logs each delivery (per channel, per recipient, per event) to `<data_dir>/proposed/.notification-log` so failures don't get lost.
 
+## Auto-review
+
+`auto_review` is the only config block that grants a cron permission to modify knowledge files (`patterns.md` and `personas/*.md`). Every other learning cron is read-only on those files. Because of that, this block is off by default, opt-in, and has three modes:
+
+- **`mode: "off"`** (default) — the `learn/auto-review` cron does nothing. Knowledge files are modified only by humans. This is the safe starting point for any new user
+- **`mode: "dry_run"`** — the cron runs, reviews each proposal, and writes a log of what it *would* have merged to `<data_dir>/proposed/.auto-review-dry-run-YYYY-MM-DD.md`. It does NOT actually touch knowledge files or proposal files. Use this to build trust in Claude's judgment before giving it write access. Recommended for at least 2 weeks before flipping to `on`
+- **`mode: "on"`** — the cron actually merges qualifying proposals into knowledge files, rejects noise, and leaves ambiguous items for human review. Every decision is recorded in `<data_dir>/proposed/.auto-review-log` and is reversible via the `rollback` subskill
+
+- **`max_merges_per_run`** (default 5) — hard cap on how many merges can happen in a single cron run. If the cron wants to merge more than this, something is off (big proposal backlog, or over-eager Claude). Extra items stay in the proposal file for the next run or manual review
+
+The auto-review subskill has its own internal quality bar beyond the user's config — every merge requires 3+ pieces of evidence, 2+ distinct trusted reviewers, a clear *why*, no duplication of existing rules, not an amendment to an existing rule, and high Claude confidence. Those criteria are hardcoded in the subskill to prevent users from accidentally loosening the bar via config.
+
 ## Validation
 
-Before any subskill uses this file, validate it. Missing `repo` is fatal. Missing `personas` is a warning — `code-like-auto` can still work if personas exist as files, but `from-persona-code` won't know who to scrape. Invalid cron expressions should be reported but not block the current run. Missing or invalid `notifications` is treated as "no notifications configured" — not an error.
+Before any subskill uses this file, validate it. Missing `repo` is fatal. Missing `personas` is a warning — `code-like-auto` can still work if personas exist as files, but `from-persona-code` won't know who to scrape. Invalid cron expressions should be reported but not block the current run. Missing or invalid `notifications` is treated as "no notifications configured" — not an error. Missing or invalid `auto_review` is treated as `mode: "off"` — not an error.

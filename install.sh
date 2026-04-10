@@ -98,6 +98,14 @@ if [ -d "${SKILL_DEST}" ]; then
 fi
 
 cp -R "${SKILL_SRC}" "${SKILL_DEST}"
+
+# Copy CHANGELOG.md alongside the skill so `upgrade/` can read it at runtime.
+# Placed at the skill dir's parent so the path from any subskill is stable.
+CHANGELOG_SRC="${EXTRACTED_DIR}/CHANGELOG.md"
+if [ -f "${CHANGELOG_SRC}" ]; then
+  cp "${CHANGELOG_SRC}" "${SKILL_DEST}/CHANGELOG.md"
+fi
+
 success "Skill installed."
 
 # --- create data directory ---------------------------------------------------
@@ -118,16 +126,41 @@ else
   success "Existing registry preserved at ${REGISTRY}."
 fi
 
+# --- upgrade hint ------------------------------------------------------------
+
+# If the user already has repos in the registry, this is an upgrade, not a fresh
+# install. Tell them about the upgrade subskill so they can opt into new features.
+
+EXISTING_REPOS=0
+if [ -f "${REGISTRY}" ]; then
+  # Count repo entries with a minimal grep — avoid a hard jq dependency
+  EXISTING_REPOS="$(grep -c '"path":' "${REGISTRY}" 2>/dev/null || echo 0)"
+fi
+
 # --- done --------------------------------------------------------------------
 
 echo
 success "codebase-rizz installed."
 echo
-echo "Next steps:"
-echo "  1. cd into any repo you want to track"
-echo "  2. In Claude Code, run: /codebase-rizz bootstrap"
-echo "  3. Pick global or repo-local storage when prompted"
-echo
+
+if [ "${EXISTING_REPOS}" -gt 0 ]; then
+  warn "You have ${EXISTING_REPOS} repo(s) already set up from a previous install."
+  echo
+  echo "To see what's new and opt into any new features (like auto-review),"
+  echo "run this in any of your tracked repos:"
+  echo "  /codebase-rizz upgrade"
+  echo
+  echo "See CHANGELOG.md in the skill directory for details:"
+  echo "  ${SKILL_DEST}/../CHANGELOG.md"
+  echo
+else
+  echo "Next steps:"
+  echo "  1. cd into any repo you want to track"
+  echo "  2. In Claude Code, run: /codebase-rizz bootstrap"
+  echo "  3. Pick global or repo-local storage when prompted"
+  echo
+fi
+
 echo "Data directory:  ${DATA_DIR}"
 echo "Skill directory: ${SKILL_DEST}"
 echo

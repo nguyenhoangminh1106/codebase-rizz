@@ -72,6 +72,7 @@ Create `<data_dir>/rizz.config.json` with sensible defaults. See `../references/
 
 ```json
 {
+  "version": 2,
   "repo": "<owner/name from remote URL>",
   "default_branch": "<from `git symbolic-ref refs/remotes/origin/HEAD` or prompt>",
   "personas": [],
@@ -81,12 +82,19 @@ Create `<data_dir>/rizz.config.json` with sensible defaults. See `../references/
     "from_persona_code": "15 6 * * *",
     "track_reconcile": "0 7 * * *",
     "from_codebase": "0 9 * * 0",
-    "patterns_drift": "30 9 * * 0"
+    "patterns_drift": "30 9 * * 0",
+    "auto_review": "0 10 * * 0"
+  },
+  "auto_review": {
+    "mode": "off",
+    "max_merges_per_run": 5
   },
   "ignore_paths": [],
   "min_pr_comment_signal": 2
 }
 ```
+
+The `version` field matches the highest version in `CHANGELOG.md` at the time bootstrap runs. The `upgrade` subskill uses this field to know which migrations to apply on future version bumps. Bootstrap always writes the current version; never write an older version even if you're seeding from an old template.
 
 Fill `personas` in step 6 as the user names engineers. After that, ask separately: "Which of these engineers do you trust to produce high-signal review comments? These are the reviewers `learn/from-pr-comments` will learn team patterns from — usually the senior folks whose taste you'd want codified. Pick any subset, or leave empty to disable pattern learning." Fill `trusted_reviewers` with the answer.
 
@@ -131,9 +139,31 @@ If **yes**:
 
 Bootstrap does not run any cron immediately. The seed drafts are enough; running crons on first bootstrap would write proposals before the user has even seen the initial personas. The first actual cron fires on its next scheduled slot.
 
+## Opt in to auto-review (optional, off by default)
+
+After the learn crons are generated (or skipped), offer the auto-review opt-in:
+
+> **Auto-review proposals?**
+>
+> codebase-rizz can run a separate weekly cron that reads each proposal, has Claude decide whether it's good enough to merge into `patterns.md` and the persona files, and actually does the merge for you. Clearly-bad items get rejected automatically. Ambiguous items stay in `proposed/` for you to review by hand.
+>
+> This is the only part of the skill that modifies your knowledge base without direct approval each time. Every decision is logged and reversible via `rollback`. It's **off by default** — most users start with `off` and run the learn crons for a week or two first to see what the proposals look like before enabling this.
+>
+> - 1) **Off** (recommended for new users — review everything manually)
+> - 2) **Dry-run** (Claude decides but writes to a log instead of merging — good for building trust)
+> - 3) **On** (Claude actually merges qualifying proposals)
+
+Based on the answer:
+
+- **Off** → set `auto_review.mode` to `"off"` in `rizz.config.json`. Do NOT generate the `auto_review` launchd plist. The cron key stays in `crons` for later opt-in but no agent is installed
+- **Dry-run** → set `auto_review.mode` to `"dry_run"`. Generate the launchd plist for `auto_review` and print the `launchctl load` command alongside the learn-cron load commands
+- **On** → set `auto_review.mode` to `"on"`. Generate plist, print load command. Warn the user: "Auto-review is now set to actually merge proposals. Review `<data_dir>/proposed/.auto-review-log` after the first run (Sunday 10am) and use `rollback` if Claude makes a bad call"
+
+Default `auto_review.max_merges_per_run` to `5`. The user can raise it in config later if they trust the cron more.
+
 ## Set up notifications (optional)
 
-After the cron step (whether it ran or was skipped), offer notification setup:
+After the auto-review step (whether it ran or was skipped), offer notification setup:
 
 > Want to set up notifications for new proposals and articles? I can send them via Gmail or Slack. (y/n)
 
