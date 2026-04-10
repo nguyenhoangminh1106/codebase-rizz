@@ -1,6 +1,6 @@
 # Persona file schema
 
-Every file in `.codebase-rizz/personas/` describes one engineer and is keyed by their GitHub username. The filename is `<github-username>.md` — lowercase, exactly matching the GitHub handle, so `learn/from-persona-code` can find it automatically when scraping PRs.
+Every file in `<data_dir>/personas/` describes one engineer and is keyed by their GitHub username. The filename is `<github-username>.md` — lowercase, exactly matching the GitHub handle, so `learn/from-persona-code` can find it automatically when scraping PRs.
 
 ## Structure
 
@@ -56,13 +56,13 @@ Quotes pulled from their review comments on others' PRs. These are gold — they
 
 ## How `code-like-auto` uses this file
 
-1. Loads every file in `personas/` at runtime
+1. Loads every file in `<data_dir>/personas/` at runtime
 2. Runs the user's task description against each persona's `triggers` and `anti_triggers`
 3. Reads the top 1–3 candidates' full files to make the final choice
 4. Hands off to `code-like-person/SKILL.md` with the chosen persona name
 
-Never hardcode persona logic into `code-like-auto`. Adding an engineer should only require dropping a new `.md` file in `personas/`.
+Never hardcode persona logic into `code-like-auto`. Adding an engineer should only require dropping a new `.md` file in `<data_dir>/personas/`.
 
 ## How `learn/from-persona-code` writes to this file
 
-The cron never edits this file directly. It writes a proposal to `proposed/personas/<username>-YYYY-MM-DD.md` following the same schema, containing only the *new* rules, examples, and review quotes it found. The human reviews the proposal and merges the additions manually — usually by appending to the right section.
+The cron never edits this file directly. It writes a proposal to `<data_dir>/proposed/personas/<username>-YYYY-MM-DD.md` following the same schema, containing only the *new* rules, examples, and review quotes it found. The human reviews the proposal and merges the additions manually — usually by appending to the right section.

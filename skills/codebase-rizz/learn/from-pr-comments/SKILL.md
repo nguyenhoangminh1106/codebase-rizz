@@ -1,11 +1,15 @@
 ---
 name: codebase-rizz-learn-from-pr-comments
-description: Scrape merged PR review comments from the configured repo, cluster recurring themes, and propose new patterns for patterns.md. Runs as a daily cron but can be invoked manually. Writes proposals to .codebase-rizz/proposed/patterns/ — never edits patterns.md directly. Human merges.
+description: Scrape merged PR review comments from the configured repo, cluster recurring themes, and propose new patterns for patterns.md. Runs as a daily cron but can be invoked manually. Writes proposals to <data_dir>/proposed/patterns/ — never edits patterns.md directly. Human merges.
 ---
 
 # learn / from-pr-comments
 
 Daily cron. Reads the recent review comments on merged PRs, finds themes that recur, and proposes new or updated patterns.
+
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../references/paths.md`. When this subskill runs as a cron across multiple repos, iterate the registry and resolve once per repo. If a repo's lookup fails (never bootstrapped), skip it with a warning.
 
 ## Schedule
 
@@ -13,7 +17,7 @@ Default: daily at 6:00am. Configured via `crons.from_pr_comments` in `rizz.confi
 
 ## What "recent" means
 
-Since the last successful run of this cron. Track the last-run timestamp at `.codebase-rizz/proposed/.from-pr-comments-last-run`. If the file doesn't exist, default to "PRs merged in the last 24 hours."
+Since the last successful run of this cron. Track the last-run timestamp at `<data_dir>/proposed/.from-pr-comments-last-run`. If the file doesn't exist, default to "PRs merged in the last 24 hours."
 
 ## The pipeline
 
@@ -34,9 +38,9 @@ Since the last successful run of this cron. Track the last-run timestamp at `.co
 
 4. **Apply the signal threshold**. Read `min_pr_comment_signal` from `rizz.config.json` (default 2). A theme needs at least that many distinct source comments to qualify as a proposal. This is the noise filter — a one-off comment isn't a pattern.
 
-5. **Check against existing patterns**. Read `.codebase-rizz/patterns.md`. If a theme already exists there, don't propose a duplicate — but do propose an *amendment* if the new comments add a nuance or an edge case the existing pattern missed.
+5. **Check against existing patterns**. Read `<data_dir>/patterns.md`. If a theme already exists there, don't propose a duplicate — but do propose an *amendment* if the new comments add a nuance or an edge case the existing pattern missed.
 
-6. **Write the proposal** to `.codebase-rizz/proposed/patterns/YYYY-MM-DD.md`:
+6. **Write the proposal** to `<data_dir>/proposed/patterns/YYYY-MM-DD.md`:
 
    ```markdown
    # Proposed patterns — 2026-04-11

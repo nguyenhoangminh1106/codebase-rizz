@@ -13,14 +13,17 @@ This is a **router skill**. It dispatches to one of several subskills based on w
 
 A codebase has two layers of knowledge. The first layer is the code itself — files, tests, types. Any agent can read that. The second layer is the *why*: why did Minh reach for a Zustand store instead of a ref, why does Anthony always use `satisfies` instead of `as const`, why did the team decide eligibility checks must not mix concerns. That second layer lives in people's heads and in scattered PR comments, and it's what this skill exists to capture.
 
-The skill stores this knowledge **per repo**, in a `.codebase-rizz/` directory committed alongside the code. Knowledge from one repo never bleeds into another. Engineers are tracked by their GitHub username.
+The skill stores this knowledge **per repo**. Each repo has a data directory with the same layout, but *where* that directory lives is a choice the user makes during `bootstrap`:
 
-## Config layout (repo-local)
+- **Global** (`~/.codebase-rizz/repos/<slug>/`) — private to the user, no footprint in the repo. Good for solo use or trying the skill without committing to team adoption
+- **Repo-local** (`<repo-root>/.codebase-rizz/`) — committed with the code, shared with the team via git
 
-Every repo the skill works with has this structure:
+Both modes use the identical layout inside the data directory. Every subskill resolves the current repo's `data_dir` via a lookup in `~/.codebase-rizz/registry.json` — see `references/paths.md` for the exact mechanism. **Never hardcode `.codebase-rizz/` anywhere**; always resolve through the registry.
+
+## Data directory layout (regardless of storage mode)
 
 ```
-<repo-root>/.codebase-rizz/
+<data_dir>/
 ├── rizz.config.json         # repo slug, tracked GitHub usernames, cron schedule
 ├── personas/                # one file per engineer, keyed by GitHub username
 │   └── <github-username>.md
@@ -32,9 +35,13 @@ Every repo the skill works with has this structure:
     └── personas/
 ```
 
-A global per-user registry at `~/.claude/skills/codebase-rizz/registry.json` tracks the list of repos the skill knows about. It contains nothing else — no knowledge, no code.
+In **repo-local** mode, `proposed/` should be added to the repo's `.gitignore` — it's ephemeral cron output and committing it would cause merge churn between machines running the crons. Everything else in the data directory is meant to be committed so the team shares it.
 
-`patterns.md`, `personas/`, `feature-ownership.md`, and `articles/` are meant to be committed so the team shares them. `proposed/` should be gitignored — it's ephemeral cron output until a human merges it, and committing it would cause merge churn between machines running the crons.
+In **global** mode, nothing ever touches the repo's working tree.
+
+## The registry
+
+`~/.codebase-rizz/registry.json` is the single source of truth for which repos the skill knows about and where each one's data lives. Every subskill reads it first to resolve the current repo's `data_dir`. See `references/paths.md` for the schema and the lookup pseudocode.
 
 ## Subskill router
 
@@ -51,14 +58,18 @@ When the user asks for something, load the matching subskill file:
 | "Check if any patterns are stale" (weekly cron) | `learn/patterns-drift/SKILL.md` |
 | "Track that Minh is building the CRM quick actions" | `track/assign/SKILL.md` |
 | Daily reconcile of ownership vs actual PR authors | `track/reconcile/SKILL.md` |
+| "Move this repo's rizz data from global to repo-local (or back)" | `migrate/SKILL.md` |
 
 If the user's request is ambiguous, ask which subskill they want before loading. Loading the wrong subskill produces an answer shaped like the wrong tool, which is worse than a brief clarifying question.
 
 ## Shared preconditions
 
-Before any subskill that touches GitHub runs, the gh preflight check must pass. See `references/gh-preflight.md` for the exact sequence. The preflight is cached per session in `/tmp/codebase-rizz-gh-check` so it only runs once.
+Every subskill except `bootstrap` and `migrate` does these checks in order before doing anything else:
 
-Before any subskill that reads or writes repo-local config, verify `.codebase-rizz/` exists. If it doesn't, tell the user to run `bootstrap` first instead of silently creating files.
+1. **Resolve the repo's `data_dir`** via `references/paths.md`. If the current repo isn't in the registry, tell the user to run `bootstrap` first — don't silently create files
+2. **Run the gh preflight** if the subskill touches GitHub. See `references/gh-preflight.md`. Cached per session so it only runs once
+
+If either check fails, stop and print the specific remediation. No silent fallbacks.
 
 ## Design principles
 
@@ -72,6 +83,7 @@ Before any subskill that reads or writes repo-local config, verify `.codebase-ri
 
 ## References
 
+- `references/paths.md` — how to resolve `data_dir` from the registry; slug derivation; storage modes
 - `references/gh-preflight.md` — the 4-step GitHub CLI check
 - `references/persona-schema.md` — the format every persona file must follow
 - `references/config-schema.md` — the format of `rizz.config.json`

@@ -1,73 +1,137 @@
 ---
 name: codebase-rizz-bootstrap
-description: First-run setup for codebase-rizz in a new repo. Creates .codebase-rizz/, verifies gh CLI access, asks for tracked engineers by GitHub username, and seeds initial persona files by analyzing each engineer's recent merged PRs. Use when the user is adopting codebase-rizz in a new codebase or adding engineers to an existing setup.
+description: First-run setup for codebase-rizz in a new repo. Asks whether to store knowledge globally (private, no repo footprint) or repo-local (committed, team-shared), creates the chosen data directory, verifies gh CLI access, asks for tracked engineers by GitHub username, and seeds initial persona files from each engineer's recent merged PRs. Use when the user is adopting codebase-rizz in a new codebase or adding engineers to an already-bootstrapped one.
 ---
 
 # bootstrap
 
-First-run setup. Runs once per repo, and again any time the user adds a new engineer to track.
+First-run setup. Runs once per repo, or again to add engineers to an already-bootstrapped repo.
 
-## What this subskill does
+## The six things this does, in order
 
-Four things, in order. Don't skip ahead.
+Don't skip ahead. Each step gates the next.
 
-1. Run the gh preflight (see `../references/gh-preflight.md`). If it fails, stop and relay the fix. Bootstrap can't do anything without working gh access.
-2. Create `.codebase-rizz/` in the current repo root with the directory layout from the top-level SKILL.md, plus a starter `rizz.config.json`. Don't overwrite if the directory already exists — print what's there and ask whether the user wants to add an engineer instead.
-3. Ask the user which GitHub usernames to track. Accept them as a space- or comma-separated list. Validate each by running `gh api users/<username>` and bail on the first 404 with a clear error.
-4. For each valid username, fetch their last 20 merged PRs in the configured repo, read the diffs and the review comments they authored on others' PRs, and synthesize a first-draft persona file at `personas/<username>.md` following the schema in `../references/persona-schema.md`. Write these as real files, not proposals — the human can always edit them later, and starting from blank slate is worse than starting from a reasonable draft.
+1. **Confirm we're in a git repo.** Run `git rev-parse --show-toplevel`. If it fails, stop and tell the user to `cd` into their project.
+2. **Check the registry.** Read `~/.codebase-rizz/registry.json`. If it doesn't exist, tell the user to run `install.sh` first — bootstrap can't operate without the global data directory in place.
+3. **Decide: new bootstrap or add-to-existing?** If the current repo path already appears in the registry, skip to step 6 (add engineers). Otherwise continue.
+4. **Ask the user where to store this repo's knowledge.** See "The storage choice" below. Resolve to a `data_dir` path.
+5. **Run the gh preflight.** See `../references/gh-preflight.md`. If it fails, stop and relay the fix — bootstrap can't seed personas without gh access.
+6. **Ask which engineers to track**, validate each GitHub username, seed their persona files, and write `rizz.config.json`.
 
-## Finding engineer PRs
+## The storage choice
 
-Use this gh command pattern:
+Present this prompt verbatim (or very close — the structure matters more than the wording):
 
-```bash
-gh pr list --repo <owner>/<repo> --author <username> --state merged --limit 20 \
-  --json number,title,url,mergedAt,files,additions,deletions
-```
+> Where should I store this project's codebase-rizz knowledge?
+>
+> **1) Global** (private to you, no footprint in the repo)
+>   - Files live at `~/.codebase-rizz/repos/<slug>/`
+>   - Nothing gets added to the repo's working tree or git history
+>   - Good for: solo use, experimenting, projects where the team hasn't adopted codebase-rizz yet
+>
+> **2) Repo-local** (committed, shared with your team via git)
+>   - Files live at `<repo-root>/.codebase-rizz/`
+>   - Commit them so teammates get the same personas and patterns
+>   - Good for: teams who've agreed to share institutional knowledge through version control
+>
+> Pick 1 or 2:
 
-For review comments they left on *others'* PRs (these are the richest signal for persona voice):
+If the user picks **global**:
+- Derive the slug from `git config --get remote.origin.url` using the algorithm in `../references/paths.md`
+- `data_dir = ~/.codebase-rizz/repos/<slug>`
+- `mkdir -p` the data dir and its subdirectories (`personas/`, `articles/`, `proposed/patterns/`, `proposed/personas/`)
 
-```bash
-gh api "repos/<owner>/<repo>/pulls/comments?per_page=100" \
-  --paginate --jq '.[] | select(.user.login == "<username>")' \
-  | head -200
-```
+If the user picks **repo-local**:
+- `data_dir = <repo-root>/.codebase-rizz`
+- `mkdir -p` the data dir and subdirectories
+- Append `.codebase-rizz/proposed/` to `.gitignore` (create `.gitignore` if it doesn't exist). Append `.codebase-rizz/` itself is NOT added to gitignore — most of the dir is meant to be committed
+- Tell the user explicitly: "I've added `.codebase-rizz/proposed/` to `.gitignore`. The rest of `.codebase-rizz/` is meant to be committed — commit it when you're ready."
 
-Don't paginate forever. Cap at the most recent 200 review comments or the command takes too long.
+If the repo has no remote (fresh `git init`), fall back to `local-<parent-dir-name>` as the slug and warn the user that remote-less slugs can become fragile if they add a remote later.
 
-## Drafting the persona file
+## Register the repo
 
-For each engineer, synthesize a persona file with these sections populated:
-
-- **Frontmatter** — `name` (username), `display_name` (from `gh api users/<username>`), `strengths` (infer from file paths they touch most — frontend, backend, infra, schema), `triggers` (verbs + nouns from their PR titles and review comments), `anti_triggers` (areas they rarely touch)
-- **Mental model** — one paragraph. Derive from the shape of their PRs: do they do small surgical fixes or large refactors? Do their review comments focus on types, architecture, naming, performance?
-- **Principles** — 3–5 rules, each with a reason and a PR or comment link. Pull these from their review comments first, their own PR descriptions second
-- **Anti-patterns** — 2–3 things they explicitly pushed back on in review. Direct quotes with links are ideal
-- **Example PRs** — 3–5 of their merged PRs that best represent their style. Pick for variety (different parts of the codebase) not volume
-- **Notes from review comments** — direct quotes with links, 5–10 of the most characteristic ones
-
-The bootstrap draft is a first pass. `learn/from-persona-code` will refine it over time via proposals.
-
-## Updating rizz.config.json
-
-Append new usernames to the `personas` array. Don't overwrite the whole file — a user might have customized `crons`, `ignore_paths`, or `min_pr_comment_signal` already.
-
-## Adding to the global registry
-
-After successful bootstrap, append the absolute repo path to `~/.claude/skills/codebase-rizz/registry.json`:
+After creating the data dir, append an entry to `~/.codebase-rizz/registry.json`:
 
 ```json
-{ "repos": ["/abs/path/to/this/repo", "/other/repo"] }
+{
+  "path": "<absolute repo path from git rev-parse --show-toplevel>",
+  "slug": "<derived slug>",
+  "remote_url": "<from git config --get remote.origin.url, or null>",
+  "storage": "global" | "repo-local",
+  "data_dir": "<resolved absolute path>",
+  "bootstrapped_at": "<ISO 8601 UTC timestamp>"
+}
 ```
 
-This is how the cron scheduler knows which repos to visit. If the file doesn't exist, create it.
+Read the existing JSON, append to `repos`, write back. Never overwrite the whole file blindly — another repo's entry might already be there.
+
+## Seed rizz.config.json
+
+Create `<data_dir>/rizz.config.json` with sensible defaults. See `../references/config-schema.md` for the full shape. At minimum:
+
+```json
+{
+  "repo": "<owner/name from remote URL>",
+  "default_branch": "<from `git symbolic-ref refs/remotes/origin/HEAD` or prompt>",
+  "personas": [],
+  "crons": {
+    "from_pr_comments": "0 6 * * *",
+    "from_persona_code": "15 6 * * *",
+    "track_reconcile": "0 7 * * *",
+    "from_codebase": "0 9 * * 0",
+    "patterns_drift": "30 9 * * 0"
+  },
+  "ignore_paths": [],
+  "min_pr_comment_signal": 2
+}
+```
+
+Fill `personas` in step 6 as the user names engineers.
+
+## Seed persona files from real PRs
+
+Ask the user which GitHub usernames to track (space- or comma-separated). For each:
+
+1. **Validate**: `gh api users/<username>` — bail with a clear error on 404
+2. **Fetch their last 20 merged PRs** in this repo:
+   ```bash
+   gh pr list --repo <owner>/<repo> --author <username> --state merged --limit 20 \
+     --json number,title,url,mergedAt,files,additions,deletions
+   ```
+3. **Fetch up to 200 of their review comments on other people's PRs** (the richest signal for persona voice):
+   ```bash
+   gh api "repos/<owner>/<repo>/pulls/comments?per_page=100" --paginate \
+     --jq '.[] | select(.user.login == "<username>")' | head -200
+   ```
+4. **Synthesize a first-draft persona file** at `<data_dir>/personas/<username>.md`, following the schema in `../references/persona-schema.md`. Populate:
+   - Frontmatter (`name`, `display_name`, `strengths`, `triggers`, `anti_triggers`)
+   - Mental model paragraph (derived from the shape of their PRs and the tone of their review comments)
+   - 3–5 principles with PR links
+   - 2–3 anti-patterns with PR links
+   - 3–5 example PRs
+   - 5–10 direct review quotes with links
+5. **Append the username** to `personas` in `rizz.config.json`
+
+The first draft is a starting point. `learn/from-persona-code` will refine it over time via proposals that the user merges.
+
+## Don't run crons yet
+
+Bootstrap does not kick off any learning crons. The seed drafts are enough; running crons immediately would write proposals before the user has even seen the initial personas. The user (or the `schedule` skill) starts crons when they're ready.
 
 ## Reporting back
 
 Tell the user exactly:
-- Which files were created (list the paths)
-- Which personas were seeded and from how many PRs each
+- Which storage mode was chosen and where `data_dir` is
+- Which files were created (list absolute paths)
+- Which personas were seeded and how many PRs each was based on
 - Any usernames that failed validation
-- The next step: either run `review` on a diff, or let the crons start learning
+- A one-liner on what to try next: `review` on a diff, or asking for "code like <name>"
 
-Don't run any learning crons during bootstrap — the seed drafts are enough, and running crons immediately would write proposals before the user has even seen the initial drafts.
+If repo-local storage was chosen, remind them one more time to commit the new files when they're ready.
+
+## Edge cases
+
+- **Already bootstrapped, user wants to add engineers**: skip the storage prompt, find the existing entry in the registry, append new usernames to the existing `personas` array and seed only the new files
+- **Already bootstrapped, user wants to change storage mode**: don't do it here. Tell them to run `migrate` instead — it handles moving files atomically
+- **User picks a username already in `personas`**: warn and skip; their existing file is authoritative

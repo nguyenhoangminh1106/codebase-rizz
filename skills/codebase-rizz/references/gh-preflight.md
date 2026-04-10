@@ -36,7 +36,7 @@ If not logged in:
 
 ### 3. Is the configured repo accessible?
 
-Read the repo slug from `.codebase-rizz/rizz.config.json` (key: `repo`). Then:
+Resolve the current repo's `data_dir` via the registry lookup (see `paths.md`), then read `<data_dir>/rizz.config.json` and extract the `repo` field (owner/name slug). Then:
 
 ```bash
 gh repo view <owner>/<repo> >/dev/null
@@ -44,7 +44,7 @@ gh repo view <owner>/<repo> >/dev/null
 
 If this fails:
 
-> Can't reach `<owner>/<repo>`. Either the slug in `.codebase-rizz/rizz.config.json` is wrong, or your GitHub account doesn't have access. Check the slug first, then ask a repo admin to add you if the slug is right.
+> Can't reach `<owner>/<repo>`. Either the slug in `<data_dir>/rizz.config.json` is wrong, or your GitHub account doesn't have access. Check the slug first, then ask a repo admin to add you if the slug is right.
 
 ### 4. Cache the pass
 
@@ -59,5 +59,5 @@ Subsequent subskill calls in the same session check for this file first and skip
 ## When to re-run
 
 - If any step failed previously and the user says they fixed it
-- If the user changed the repo slug in `rizz.config.json`
+- If the user changed the repo slug in `<data_dir>/rizz.config.json`
 - If a gh call inside a subskill returns a permission error — the token may have lost a scope; re-run the preflight and retry once

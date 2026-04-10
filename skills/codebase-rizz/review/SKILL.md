@@ -1,11 +1,15 @@
 ---
 name: codebase-rizz-review
-description: Self-review a diff or branch against the team's patterns.md checklist in .codebase-rizz/. Flags violations, cites the specific pattern number and reason, and suggests fixes. Use before the user opens a PR, or whenever they say "review this" / "check my diff" / "is this following our conventions".
+description: Self-review a diff or branch against the team's patterns.md checklist (resolved from the codebase-rizz registry). Flags violations, cites the specific pattern number and reason, and suggests fixes. Use before the user opens a PR, or whenever they say "review this" / "check my diff" / "is this following our conventions".
 ---
 
 # review
 
 Checks a diff against the team's accumulated review patterns. This is the "self-review before PR" subskill.
+
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../references/paths.md`. If the lookup fails, tell the user to run `bootstrap` and stop.
 
 ## Inputs
 
@@ -19,7 +23,7 @@ The diff to review. Figure out which, in this priority order:
 
 ## The checklist
 
-Read `.codebase-rizz/patterns.md`. This is the team's review rulebook, written and appended to by humans and by `learn/from-pr-comments`. Each pattern should have a number, a short rule, a *why*, and usually a PR link. Treat each one as a check to run against the diff.
+Read `<data_dir>/patterns.md`. This is the team's review rulebook, written and appended to by humans and by `learn/from-pr-comments`. Each pattern should have a number, a short rule, a *why*, and usually a PR link. Treat each one as a check to run against the diff.
 
 If `patterns.md` doesn't exist, tell the user to run `bootstrap` or add patterns manually. Don't review against a generic checklist — this skill is specifically about *this team's* conventions.
 

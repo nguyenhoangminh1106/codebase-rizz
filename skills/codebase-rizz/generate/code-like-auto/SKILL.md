@@ -1,15 +1,19 @@
 ---
 name: codebase-rizz-code-like-auto
-description: Given a coding task, pick the best-matching engineer persona for the current repo and generate code in their style. Reads all personas in .codebase-rizz/personas/, matches against the task, and delegates to code-like-person with the chosen persona. Use when the user wants code "in our team's style" but hasn't named a specific engineer, or says something like "how would we write this".
+description: Given a coding task, pick the best-matching engineer persona for the current repo and generate code in their style. Reads all personas in <data_dir>/personas/, matches against the task, and delegates to code-like-person with the chosen persona. Use when the user wants code "in our team's style" but hasn't named a specific engineer, or says something like "how would we write this".
 ---
 
 # generate / code-like-auto
 
 Picks a persona for the current task, then delegates. This subskill does not generate code itself — it's the router between a task and a persona.
 
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../references/paths.md`. If the lookup fails, tell the user to run `bootstrap` and stop.
+
 ## How to choose
 
-1. Load every file under `.codebase-rizz/personas/`. Read the frontmatter (`strengths`, `triggers`, `anti_triggers`) of all of them — cheap, small.
+1. Load every file under `<data_dir>/personas/`. Read the frontmatter (`strengths`, `triggers`, `anti_triggers`) of all of them — cheap, small.
 2. Score each persona against the user's task description:
    - +2 for each `trigger` phrase that appears (substring or close synonym) in the task
    - +1 for each `strength` tag that matches the task domain

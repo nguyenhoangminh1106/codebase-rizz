@@ -1,15 +1,19 @@
 ---
 name: codebase-rizz-code-like-person
-description: Generate code in a specific named engineer's style, using their persona file from .codebase-rizz/personas/. Called by code-like-auto once a persona is chosen, or directly when the user names an engineer ("write this like Minh would"). Requires a persona name matching an existing file.
+description: Generate code in a specific named engineer's style, using their persona file from <data_dir>/personas/. Called by code-like-auto once a persona is chosen, or directly when the user names an engineer ("write this like Minh would"). Requires a persona name matching an existing file.
 ---
 
 # code-like-person
 
 Generates code in one named engineer's voice. This is the leaf subskill — it does the actual writing.
 
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../../references/paths.md`. If the lookup fails, tell the user to run `bootstrap` and stop.
+
 ## Inputs
 
-- **persona_name**: required. Must match a filename in `.codebase-rizz/personas/` (without the `.md`)
+- **persona_name**: required. Must match a filename in `<data_dir>/personas/` (without the `.md`)
 - **task**: required. The user's coding request, verbatim
 - **why_picked**: optional. One-line explanation from `code-like-auto`, to repeat back to the user
 

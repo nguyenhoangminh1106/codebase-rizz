@@ -1,15 +1,19 @@
 ---
 name: codebase-rizz-track-assign
-description: Record that a specific engineer is building a specific feature. Updates .codebase-rizz/feature-ownership.md with an entry including engineer GitHub username, feature description, and start date. Use when the user says "Minh is working on X", "I'm starting the Y refactor", or similar ownership declarations.
+description: Record that a specific engineer is building a specific feature. Updates <data_dir>/feature-ownership.md with an entry including engineer GitHub username, feature description, and start date. Use when the user says "Minh is working on X", "I'm starting the Y refactor", or similar ownership declarations.
 ---
 
 # track / assign
 
 Records an ownership claim. Tiny subskill — one file, one append.
 
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../references/paths.md`. If the lookup fails, tell the user to run `bootstrap` and stop.
+
 ## Inputs
 
-- **engineer**: GitHub username, must match a file in `.codebase-rizz/personas/` (warn but proceed if it doesn't — the user may be tracking someone who isn't a persona yet)
+- **engineer**: GitHub username, must match a file in `<data_dir>/personas/` (warn but proceed if it doesn't — the user may be tracking someone who isn't a persona yet)
 - **feature**: short description, 1–2 sentences
 - **branch** (optional): the branch name where the work is happening, if known
 - **linear_ticket** (optional): ticket ID if the team uses Linear/Jira
@@ -18,7 +22,7 @@ If the user's request is ambiguous, ask for the engineer and feature explicitly.
 
 ## The file
 
-`.codebase-rizz/feature-ownership.md`. Create it if it doesn't exist. Structure:
+`<data_dir>/feature-ownership.md`. Create it if it doesn't exist. Structure:
 
 ```markdown
 # Feature ownership

@@ -12,46 +12,70 @@ Every codebase has two layers of knowledge. The first is the code itself — fil
 - **Self-review against team patterns.** Checks a diff against `patterns.md` — the team's accumulated review rulebook — before you open a PR
 - **Learn every day.** Daily and weekly crons scrape recent PRs and propose new patterns, persona updates, and long-form articles about how features work. Human merges all proposals
 - **Track who's building what.** Lightweight ownership log that the skill uses as context for better persona matching and smarter suggestions
-- **Per-repo isolation.** Knowledge never crosses between codebases. Each repo has its own `.codebase-rizz/` directory
+- **Per-repo isolation.** Knowledge never crosses between codebases. Every repo has its own data directory — stored globally in your home dir by default, or committed inside the repo if your team wants to share
+- **Scales to many projects.** One install, use across all your repos. Each project picks its own storage mode at bootstrap time
 
 ## Install
 
+One line, no cloning:
+
 ```bash
-# Clone into your Claude Code skills directory
-mkdir -p ~/.claude/skills
-git clone https://github.com/nguyenhoangminh1106/codebase-rizz ~/.claude/skills/codebase-rizz-src
-ln -s ~/.claude/skills/codebase-rizz-src/skills/codebase-rizz ~/.claude/skills/codebase-rizz
+curl -fsSL https://raw.githubusercontent.com/nguyenhoangminh1106/codebase-rizz/main/install.sh | bash
 ```
 
-Then in any repo, run:
+This downloads the skill to `~/.claude/skills/codebase-rizz/` and creates the global data directory at `~/.codebase-rizz/`. Re-running is safe — it upgrades the skill in place and never touches your data.
+
+Then in any repo you want to track, run:
 
 ```
 /codebase-rizz bootstrap
 ```
 
-It will verify `gh` CLI access, create `.codebase-rizz/` in the repo root, and ask for the GitHub usernames of the engineers you want to track.
+Bootstrap will:
+1. Ask where to store this project's knowledge (global or repo-local — see below)
+2. Verify `gh` CLI access
+3. Ask for the GitHub usernames of the engineers you want to track
+4. Seed a first-draft persona file for each by reading their recent merged PRs
 
 ## Requirements
 
 - [GitHub CLI](https://cli.github.com/) (`gh`) with `repo` and `read:org` scopes
 - [Claude Code](https://claude.com/claude-code) with the `schedule` skill if you want crons to run on a timer
 
-## Layout in your repo
+## Where your knowledge lives
 
-After bootstrap, you'll have:
+At bootstrap you pick one of two storage modes per project:
+
+**Global (default)** — private to you, zero footprint in the repo
+
+```
+~/.codebase-rizz/
+├── registry.json            # index of every repo you track
+└── repos/
+    └── <slug>/              # one dir per project
+        ├── rizz.config.json
+        ├── personas/
+        ├── patterns.md
+        ├── feature-ownership.md
+        ├── articles/
+        └── proposed/        # cron output awaiting human merge
+```
+
+**Repo-local** — committed with the code, shared with your team
 
 ```
 <repo-root>/.codebase-rizz/
-├── rizz.config.json         # repo slug, tracked engineers, cron schedule
+├── rizz.config.json
 ├── personas/
-│   └── <github-username>.md
-├── patterns.md              # team review rulebook
-├── feature-ownership.md     # who's building what
-├── articles/                # weekly technical writeups
-└── proposed/                # cron output awaiting human merge (gitignored)
+├── patterns.md
+├── feature-ownership.md
+├── articles/
+└── proposed/                # gitignored
 ```
 
-Commit `rizz.config.json`, `personas/`, `patterns.md`, `feature-ownership.md`, and `articles/`. Add `.codebase-rizz/proposed/` to `.gitignore` — it's ephemeral cron output until you merge it.
+In repo-local mode, commit everything except `proposed/` — bootstrap adds the gitignore entry for you. You can switch modes later with the `migrate` subskill.
+
+The skill uses the same layout either way. Every subskill resolves the current repo's data directory via `~/.codebase-rizz/registry.json`, so the choice is fully transparent to the rest of the skill.
 
 ## Subskills
 
@@ -67,6 +91,7 @@ Commit `rizz.config.json`, `personas/`, `patterns.md`, `feature-ownership.md`, a
 | `learn/patterns-drift` | Weekly cron — flag patterns being ignored |
 | `track/assign` | Record that an engineer is building a feature |
 | `track/reconcile` | Daily cron — verify ownership against real PR activity |
+| `migrate` | Move a repo's data between global and repo-local storage |
 
 All learning crons write proposals — they never edit your knowledge files directly. You merge.
 

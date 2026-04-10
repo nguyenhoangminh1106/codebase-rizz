@@ -1,11 +1,15 @@
 ---
 name: codebase-rizz-learn-from-codebase
-description: Weekly cron that picks one un-documented feature from the codebase and writes a narrative technical article explaining how it works and why. Saves to .codebase-rizz/articles/. Use when the user wants to deeply understand a feature, or let it run on schedule to build up a library of codebase knowledge.
+description: Weekly cron that picks one un-documented feature from the codebase and writes a narrative technical article explaining how it works and why. Saves to <data_dir>/articles/. Use when the user wants to deeply understand a feature, or let it run on schedule to build up a library of codebase knowledge.
 ---
 
 # learn / from-codebase
 
 Weekly cron. Every Sunday morning, pick one feature that hasn't been written about yet and produce a long-form technical blog post about it. This is Hari's daily-article idea, slowed to weekly because interesting features deplete fast at daily cadence.
+
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../references/paths.md`. As a multi-repo cron, iterate the registry and pick at most one feature per repo per run.
 
 ## Schedule
 
@@ -13,7 +17,7 @@ Default: Sunday 9:00am. Configured via `crons.from_codebase`.
 
 ## Pick a feature
 
-1. List everything already covered in `.codebase-rizz/articles/`. Read the filenames and the first heading of each file.
+1. List everything already covered in `<data_dir>/articles/`. Read the filenames and the first heading of each file.
 2. Identify candidate features in the repo that *aren't* yet covered. Good candidates:
    - Recently merged non-trivial PRs (large diffs, multi-file, introduce new abstractions)
    - Subsystems with dedicated directories (`components_new/consolidated-messaging/`, `lib/services/*`)
@@ -65,7 +69,7 @@ Narrative, not reference. "There was a moment when the team realized X" beats "t
 
 ## Output
 
-Save to `.codebase-rizz/articles/YYYY-MM-DD-<feature-slug>.md`. The slug should be short and human-readable (`frontend-state-with-zustand`, not `components_new_consolidated_messaging_widget`).
+Save to `<data_dir>/articles/YYYY-MM-DD-<feature-slug>.md`. The slug should be short and human-readable (`frontend-state-with-zustand`, not `components_new_consolidated_messaging_widget`).
 
 ## What to report (manual invocation)
 

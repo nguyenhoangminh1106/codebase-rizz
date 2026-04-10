@@ -1,11 +1,15 @@
 ---
 name: codebase-rizz-learn-from-persona-code
-description: For each tracked engineer, scan their recently merged PRs and propose updates to their persona file — new principles, new anti-patterns, new example PRs, new review quotes. Runs as a daily cron but can be invoked manually. Writes to .codebase-rizz/proposed/personas/. Never edits persona files directly.
+description: For each tracked engineer, scan their recently merged PRs and propose updates to their persona file — new principles, new anti-patterns, new example PRs, new review quotes. Runs as a daily cron but can be invoked manually. Writes to <data_dir>/proposed/personas/. Never edits persona files directly.
 ---
 
 # learn / from-persona-code
 
 Daily cron. Keeps each persona file growing as the engineer writes more code. Complements `learn/from-pr-comments`: that one learns team-wide patterns, this one learns per-engineer voice.
+
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../references/paths.md`. As a multi-repo cron, iterate the registry and resolve once per repo; skip non-bootstrapped repos with a warning.
 
 ## Schedule
 
@@ -28,7 +32,7 @@ For every username in `rizz.config.json`'s `personas` array:
    ```
    Review comments they leave on *other people's* PRs are usually the richest persona signal — that's where taste shows.
 
-3. **Compare against their existing persona file**. Read `.codebase-rizz/personas/<username>.md`. For each new observation, decide:
+3. **Compare against their existing persona file**. Read `<data_dir>/personas/<username>.md`. For each new observation, decide:
    - Is this a *new* principle not yet in the file? → propose as addition
    - Does it *sharpen* an existing principle (adding a condition or a counterexample)? → propose as amendment
    - Is it just a repeat of what's already there? → skip, don't noise up the proposal
@@ -39,7 +43,7 @@ For every username in `rizz.config.json`'s `personas` array:
    - **New example PRs** — representative merges worth citing
    - **New review quotes** — direct quotes that capture their voice
 
-5. **Write the proposal** to `.codebase-rizz/proposed/personas/<username>-YYYY-MM-DD.md`, using the same schema as the persona file itself so the human can easily merge sections. Only include *additions*, not the full file — the human appends.
+5. **Write the proposal** to `<data_dir>/proposed/personas/<username>-YYYY-MM-DD.md`, using the same schema as the persona file itself so the human can easily merge sections. Only include *additions*, not the full file — the human appends.
 
 ## Why proposals, not direct edits
 
@@ -47,7 +51,7 @@ Personas describe real people. Getting a rule wrong is worse than missing one �
 
 ## Cross-subskill dependency
 
-`track/assign` and `track/reconcile` feed this subskill indirectly. When the ownership log says "Minh is building the CRM quick actions," and Minh's PR on that feature merges, this subskill should weight observations from that PR more heavily — they represent intentional design choices, not drive-by commits. Read `.codebase-rizz/feature-ownership.md` as context when processing a PR.
+`track/assign` and `track/reconcile` feed this subskill indirectly. When the ownership log says "Minh is building the CRM quick actions," and Minh's PR on that feature merges, this subskill should weight observations from that PR more heavily — they represent intentional design choices, not drive-by commits. Read `<data_dir>/feature-ownership.md` as context when processing a PR.
 
 ## What to report (manual invocation)
 

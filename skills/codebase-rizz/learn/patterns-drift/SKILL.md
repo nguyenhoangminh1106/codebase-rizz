@@ -1,11 +1,15 @@
 ---
 name: codebase-rizz-patterns-drift
-description: Weekly cron that checks whether any patterns in patterns.md are being violated in recently merged code, suggesting the pattern is either stale or being ignored. Writes proposals for removal or re-emphasis to .codebase-rizz/proposed/patterns/. Never removes patterns directly.
+description: Weekly cron that checks whether any patterns in patterns.md are being violated in recently merged code, suggesting the pattern is either stale or being ignored. Writes proposals for removal or re-emphasis to <data_dir>/proposed/patterns/. Never removes patterns directly.
 ---
 
 # learn / patterns-drift
 
 Weekly cron. Keeps `patterns.md` honest by checking whether the rules are actually being followed. If a rule is routinely broken in merged PRs and nobody's calling it out in review, the rule is either wrong, outdated, or forgotten — all three deserve attention.
+
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../references/paths.md`. Iterate the registry when running as a cron; skip repos whose `patterns.md` doesn't exist yet.
 
 ## Schedule
 
@@ -13,7 +17,7 @@ Default: Sunday 9:30am (after `from-codebase` finishes). Configured via `crons.p
 
 ## How drift is measured
 
-For each pattern in `.codebase-rizz/patterns.md`:
+For each pattern in `<data_dir>/patterns.md`:
 
 1. **Translate the rule into a check.** Most patterns describe a thing to avoid (direct Prisma in services, nested ternaries, ButtonLegacy). Turn each into a grep-able or AST-checkable signal.
 2. **Run the check against recently merged code** — the last 4 weeks by default. Use `git log --since=...` to get the range, then check each merged commit's added lines.
@@ -52,7 +56,7 @@ For each pattern, produce one of:
 **Suggestion**: Rewrite the rule to clarify scope, or remove
 ```
 
-Save to `.codebase-rizz/proposed/patterns/drift-YYYY-MM-DD.md`.
+Save to `<data_dir>/proposed/patterns/drift-YYYY-MM-DD.md`.
 
 ## Why this matters
 

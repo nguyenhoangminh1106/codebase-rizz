@@ -1,6 +1,8 @@
 # rizz.config.json schema
 
-Every repo that uses codebase-rizz has one of these at `.codebase-rizz/rizz.config.json`. It's the single source of truth for which repo this is, which engineers to track, and when the crons run.
+Every repo that uses codebase-rizz has one of these at `<data_dir>/rizz.config.json`, where `<data_dir>` is resolved via the registry lookup in `paths.md`. It's the single source of truth for which repo this is, which engineers to track, and when the crons run.
+
+The file lives inside the repo's data directory regardless of storage mode — in global mode that's `~/.codebase-rizz/repos/<slug>/rizz.config.json`, and in repo-local mode it's `<repo-root>/.codebase-rizz/rizz.config.json`. The format is identical either way.
 
 ## Shape
 

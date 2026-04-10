@@ -7,13 +7,17 @@ description: Daily cron that checks feature-ownership.md against actual PR activ
 
 Daily cron. Keeps `feature-ownership.md` accurate by cross-checking it against real PR activity. Ownership is declared by humans via `track/assign`; this subskill verifies.
 
+## Before doing anything
+
+Resolve `<data_dir>` for the current repo via the registry lookup in `../../references/paths.md`. Iterate the registry when running as a cron; skip repos whose `feature-ownership.md` doesn't exist.
+
 ## Schedule
 
 Default: daily at 7:00am (after both learn crons finish). Configured via `crons.track_reconcile`.
 
 ## What it checks
 
-For every entry under `## Active` in `.codebase-rizz/feature-ownership.md`:
+For every entry under `## Active` in `<data_dir>/feature-ownership.md`:
 
 1. **Is the branch still active?** If the entry has a `Branch` field, check whether the branch exists and has recent commits.
    ```bash
@@ -48,7 +52,7 @@ Report these to the user (or log to a daily report file) with enough context to 
 
 ## Report format
 
-Save to `.codebase-rizz/proposed/reconcile-YYYY-MM-DD.md` on days when there's something to report. Skip writing the file on clean days — no noise.
+Save to `<data_dir>/proposed/reconcile-YYYY-MM-DD.md` on days when there's something to report. Skip writing the file on clean days — no noise.
 
 ```markdown
 # Ownership reconcile — 2026-04-10
