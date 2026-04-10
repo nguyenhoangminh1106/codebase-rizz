@@ -2,7 +2,10 @@
   "name": "codebase-rizz",
   "version": "3.0.0",
   "description": "Learn any codebase's lived wisdom — who codes how, what patterns the team cares about, how features actually get built — then use it to generate, review, and teach. Captures persona style from real merged PRs, enforces team patterns in review, writes narrative articles from code history, and gets smarter every day via opt-in learning crons.",
-  "author": "Minh Nguyen",
+  "author": {
+    "name": "Minh Nguyen",
+    "url": "https://github.com/nguyenhoangminh1106"
+  },
   "homepage": "https://github.com/nguyenhoangminh1106/codebase-rizz",
   "repository": "https://github.com/nguyenhoangminh1106/codebase-rizz.git",
   "license": "MIT",
