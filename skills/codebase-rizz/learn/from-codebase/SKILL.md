@@ -13,7 +13,7 @@ Resolve `<data_dir>` for the current repo via the registry lookup in `../../refe
 
 ## Schedule
 
-Default: Sunday 9:00am. Configured via `crons.from_codebase`.
+Default: Sunday 9:00am. Configured via `crons.from_codebase` and loaded as a launchd user agent by bootstrap. See `../../references/crons.md`.
 
 ## Pick a feature
 

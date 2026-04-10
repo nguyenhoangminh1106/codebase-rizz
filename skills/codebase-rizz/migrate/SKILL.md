@@ -64,7 +64,7 @@ Moving across filesystems (home dir → repo) can fail partway and leave both si
 
 - **Does not merge two existing data dirs.** If both source and target already have content, stop and ask the user to resolve manually
 - **Does not rewrite file content.** Personas, patterns, articles — all move verbatim. The schemas are identical between storage modes
-- **Does not run any crons.** If the user wants the schedule to re-register itself against the new location, they rerun whatever cron setup they used after migrate finishes
+- **Does not update the launchd agents.** The cron plists reference absolute paths. After migration, the user needs to unload the old agents and re-run bootstrap (or manually re-run the cron install step) so the new paths take effect. Migrate prints the exact `launchctl unload`/`load` commands at the end
 - **Does not modify git history.** The user commits or un-commits the repo-local files themselves
 
 ## Failure modes

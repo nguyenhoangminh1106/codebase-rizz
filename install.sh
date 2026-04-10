@@ -35,6 +35,19 @@ error()   { printf "${color_red}✗${color_reset} %s\n" "$1" >&2; }
 
 # --- preflight ---------------------------------------------------------------
 
+OS="$(uname -s)"
+if [ "${OS}" != "Darwin" ] && [ "${CODEBASE_RIZZ_FORCE:-0}" != "1" ]; then
+  error "codebase-rizz v1 is macOS-only."
+  echo
+  echo "The skill relies on launchd for local crons, which only exists on macOS."
+  echo "Linux (crontab/systemd) and Windows (Task Scheduler) support is planned but not yet shipped."
+  echo
+  echo "If you want to try it anyway and wire up crons manually, set CODEBASE_RIZZ_FORCE=1 and re-run:"
+  echo "  CODEBASE_RIZZ_FORCE=1 curl -fsSL ... | bash"
+  echo
+  exit 1
+fi
+
 if ! command -v curl >/dev/null 2>&1; then
   error "curl is required but not installed."
   exit 1

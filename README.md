@@ -12,6 +12,7 @@ Every codebase has two layers of knowledge. The first is the code itself — fil
 - **Self-review against team patterns.** Checks a diff against `patterns.md` — the team's accumulated review rulebook — before you open a PR
 - **Learn every day.** Daily and weekly crons scrape recent PRs and propose new patterns, persona updates, and long-form articles about how features work. Human merges all proposals
 - **Track who's building what.** Lightweight ownership log that the skill uses as context for better persona matching and smarter suggestions
+- **Notifications to Gmail or Slack.** Optional. Uses your own authenticated MCPs — emails send from *your* Gmail, Slack posts go through a bot *you* create in *your* workspace. You pick which channels and which events trigger them
 - **Per-repo isolation.** Knowledge never crosses between codebases. Every repo has its own data directory — stored globally in your home dir by default, or committed inside the repo if your team wants to share
 - **Scales to many projects.** One install, use across all your repos. Each project picks its own storage mode at bootstrap time
 
@@ -39,8 +40,12 @@ Bootstrap will:
 
 ## Requirements
 
+- **macOS** (v1 only — Linux and Windows support coming later)
 - [GitHub CLI](https://cli.github.com/) (`gh`) with `repo` and `read:org` scopes
-- [Claude Code](https://claude.com/claude-code) with the `schedule` skill if you want crons to run on a timer
+- [Claude Code](https://claude.com/claude-code)
+- Optional: Gmail MCP and/or Slack MCP if you want notifications
+
+Crons run locally via **launchd user agents** (macOS native). Nothing runs in the cloud, no external scheduler needed — just your own machine on a schedule. See `skills/codebase-rizz/references/crons.md` for how the plists are generated and loaded.
 
 ## Where your knowledge lives
 
@@ -92,6 +97,8 @@ The skill uses the same layout either way. Every subskill resolves the current r
 | `track/assign` | Record that an engineer is building a feature |
 | `track/reconcile` | Daily cron — verify ownership against real PR activity |
 | `migrate` | Move a repo's data between global and repo-local storage |
+| `share` | Send updates to Gmail/Slack (or a markdown fallback) via MCP |
+| `share/setup` | Interactive setup for notification channels and recipients |
 
 All learning crons write proposals — they never edit your knowledge files directly. You merge.
 

@@ -59,6 +59,8 @@ When the user asks for something, load the matching subskill file:
 | "Track that Minh is building the CRM quick actions" | `track/assign/SKILL.md` |
 | Daily reconcile of ownership vs actual PR authors | `track/reconcile/SKILL.md` |
 | "Move this repo's rizz data from global to repo-local (or back)" | `migrate/SKILL.md` |
+| "Send this update to my team via Gmail/Slack" | `share/SKILL.md` |
+| "Set up (or reconfigure) my notification channels" | `share/setup/SKILL.md` |
 
 If the user's request is ambiguous, ask which subskill they want before loading. Loading the wrong subskill produces an answer shaped like the wrong tool, which is worse than a brief clarifying question.
 
@@ -86,4 +88,6 @@ If either check fails, stop and print the specific remediation. No silent fallba
 - `references/paths.md` — how to resolve `data_dir` from the registry; slug derivation; storage modes
 - `references/gh-preflight.md` — the 4-step GitHub CLI check
 - `references/persona-schema.md` — the format every persona file must follow
-- `references/config-schema.md` — the format of `rizz.config.json`
+- `references/config-schema.md` — the format of `rizz.config.json` (including the notifications block)
+- `references/crons.md` — launchd plist template, cron expression translation, loading/disabling
+- `references/mcp-install.md` — install instructions for Gmail and Slack MCP servers

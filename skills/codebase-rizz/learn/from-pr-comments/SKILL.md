@@ -13,7 +13,7 @@ Resolve `<data_dir>` for the current repo via the registry lookup in `../../refe
 
 ## Schedule
 
-Default: daily at 6:00am. Configured via `crons.from_pr_comments` in `rizz.config.json`. Registered with the `schedule` skill during bootstrap.
+Default: daily at 6:00am. Configured via `crons.from_pr_comments` in `rizz.config.json`. Bootstrap translates this into a launchd user agent (`~/Library/LaunchAgents/com.codebase-rizz.from-pr-comments.plist`) and prints the `launchctl load` command for the user to run. See `../../references/crons.md`.
 
 ## What "recent" means
 

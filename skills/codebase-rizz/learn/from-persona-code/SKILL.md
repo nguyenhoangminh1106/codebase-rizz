@@ -13,7 +13,7 @@ Resolve `<data_dir>` for the current repo via the registry lookup in `../../refe
 
 ## Schedule
 
-Default: daily at 6:15am (15 min after `from-pr-comments` so the two don't contend for gh rate limit). Configured via `crons.from_persona_code`.
+Default: daily at 6:15am (15 min after `from-pr-comments` so the two don't contend for gh rate limit). Configured via `crons.from_persona_code` and loaded as a launchd user agent by bootstrap. See `../../references/crons.md`.
 
 ## What it does
 

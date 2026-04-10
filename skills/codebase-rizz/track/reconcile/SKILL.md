@@ -13,7 +13,7 @@ Resolve `<data_dir>` for the current repo via the registry lookup in `../../refe
 
 ## Schedule
 
-Default: daily at 7:00am (after both learn crons finish). Configured via `crons.track_reconcile`.
+Default: daily at 7:00am (after both learn crons finish). Configured via `crons.track_reconcile` and loaded as a launchd user agent by bootstrap. See `../../references/crons.md`.
 
 ## What it checks
 

@@ -116,9 +116,30 @@ Ask the user which GitHub usernames to track (space- or comma-separated). For ea
 
 The first draft is a starting point. `learn/from-persona-code` will refine it over time via proposals that the user merges.
 
-## Don't run crons yet
+## Install the cron agents
 
-Bootstrap does not kick off any learning crons. The seed drafts are enough; running crons immediately would write proposals before the user has even seen the initial personas. The user (or the `schedule` skill) starts crons when they're ready.
+After personas are seeded, offer to install launchd cron agents:
+
+> Want me to set up the learning crons now? These run on your local machine via launchd (macOS). I'll generate the plist files and print the commands for you to load them. Skip this and you can run the subskills manually or set them up later. (y/n)
+
+If **yes**:
+
+1. **Check the OS**. If not macOS, print: "Cron auto-install is macOS-only in v1. You can still run the subskills manually. On Linux/Windows, you'll need to set up your own scheduler pointing at `claude-code --skill codebase-rizz --subskill <name>`." Skip the cron step and continue.
+2. **Generate one plist per entry** in `rizz.config.json.crons` following the template in `../references/crons.md`. Use the slug from the registry entry for the label and file name. Write each plist to `~/Library/LaunchAgents/com.codebase-rizz.<slug>.<cron-key>.plist`.
+3. **Create the log directory**: `mkdir -p ~/.codebase-rizz/logs/<slug>`
+4. **Print the exact `launchctl load` commands** for every plist generated — don't run them automatically, let the user paste. Also print the `launchctl list | grep codebase-rizz` command so they can verify.
+
+Bootstrap does not run any cron immediately. The seed drafts are enough; running crons on first bootstrap would write proposals before the user has even seen the initial personas. The first actual cron fires on its next scheduled slot.
+
+## Set up notifications (optional)
+
+After the cron step (whether it ran or was skipped), offer notification setup:
+
+> Want to set up notifications for new proposals and articles? I can send them via Gmail or Slack. (y/n)
+
+If **yes**, delegate to `../share/setup/SKILL.md`. Pass the resolved `<data_dir>` so the setup subskill doesn't need to re-resolve it. When setup returns, continue to the reporting step.
+
+If **no**, continue. The user can run `share/setup/` later any time.
 
 ## Reporting back
 
@@ -127,6 +148,8 @@ Tell the user exactly:
 - Which files were created (list absolute paths)
 - Which personas were seeded and how many PRs each was based on
 - Any usernames that failed validation
+- Which cron agents were generated (and the exact `launchctl load` commands to run)
+- Whether notifications were set up, and if so, which channels/recipients
 - A one-liner on what to try next: `review` on a diff, or asking for "code like <name>"
 
 If repo-local storage was chosen, remind them one more time to commit the new files when they're ready.

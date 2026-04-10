@@ -13,7 +13,7 @@ Resolve `<data_dir>` for the current repo via the registry lookup in `../../refe
 
 ## Schedule
 
-Default: Sunday 9:30am (after `from-codebase` finishes). Configured via `crons.patterns_drift`.
+Default: Sunday 9:30am (after `from-codebase` finishes). Configured via `crons.patterns_drift` and loaded as a launchd user agent by bootstrap. See `../../references/crons.md`.
 
 ## How drift is measured
 
