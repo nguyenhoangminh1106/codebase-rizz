@@ -40,11 +40,20 @@ For each violation, produce:
 
 Don't flag things that aren't in `patterns.md`. Generic "this could be cleaner" feedback dilutes the signal. If you notice something outside the checklist that genuinely matters, put it in a separate "Observations (not in patterns)" section at the end so the user can decide whether to add it as a new pattern.
 
-## Persona-aware review (optional)
+## Persona-aware review (run alongside patterns)
 
-If the diff's author is known (from git blame or the current branch's commits), and there's a persona file for them, additionally check the diff against *their* persona's principles and anti-patterns. This catches things like "Minh usually would have used a store here" that aren't team-wide patterns but are personal taste the team respects.
+In addition to the patterns.md checklist, review the diff through **each reviewer persona** in `<data_dir>/personas/`. The point is to simulate what every teammate would say in a PR review, not just the author's own self-check.
 
-Flag persona-level findings separately from pattern violations. Persona findings are suggestions; pattern violations are blockers.
+For each persona file in `<data_dir>/personas/`:
+
+1. Read the full persona — principles, anti-patterns, review quotes, example PRs.
+2. Walk the diff *as if you were that person reviewing it*. Ask: "what would they call out here?" Echo their voice where the persona includes review quotes.
+3. Record findings separately per persona so the user can see "what would Minh say" vs "what would Ruibin say" as distinct sections.
+4. Skip a persona only if the diff touches nothing in their area *and* none of their principles apply. Say so explicitly ("— no concerns from this persona").
+
+Persona findings are **suggestions**, not blockers. Pattern violations from `patterns.md` are blockers. Keep the two cleanly separated in the output.
+
+If the diff's author has a persona file, still run their persona — authors often violate their own stated principles, and that's exactly the kind of thing this catches.
 
 ## Output format
 
@@ -60,12 +69,16 @@ Flag persona-level findings separately from pattern violations. Persona findings
 ### Pattern #13: Remove unnecessary type assertions
 ...
 
-## Persona observations (N)
+## Persona review
 
-### Minh2 — anti-pattern: forwardRef + useImperativeHandle for cross-tree coordination
-**File**: components/ChatWidget.tsx:18
-**Suggestion**: Consider lifting this into a Zustand store so CheckInPage can dispatch into it directly
-**Source**: minh2.md, PR #XXXX
+### As Minh would review it
+- **components/ChatWidget.tsx:18** — anti-pattern: forwardRef + useImperativeHandle for cross-tree coordination. Lift into a Zustand store so CheckInPage can dispatch directly. *(minhpg.md, PR #XXXX)*
+
+### As Ruibin would review it
+- — no concerns from this persona.
+
+### As Taneliang would review it
+- — no concerns from this persona (diff doesn't touch areas they typically review).
 
 ## Observations (not in patterns)
 
