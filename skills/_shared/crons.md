@@ -4,6 +4,17 @@ codebase-rizz v1 targets macOS and uses **launchd user agents** as the cron mech
 
 Linux (crontab/systemd) and Windows (Task Scheduler) are not supported in v1.
 
+## Permissions — read this first
+
+Scheduled crons invoke `claude -p`, which runs in **non-interactive mode**. There is no user sitting in front of Claude to approve tool prompts. If the skill tries to run a `gh` command or write a file that hasn't been pre-approved, Claude silently auto-denies it and the cron produces zero useful output.
+
+To make crons actually work, two things must be true:
+
+1. **The plist's `claude -p` command uses `--permission-mode dontAsk`.** This mode auto-denies anything not explicitly in the allow list — making the failure mode loud in logs instead of silent. The plist template below includes this flag
+2. **`~/.claude/settings.json` contains the allow list** defined in `permissions.md`. Bootstrap writes this during the cron install step. If the user skipped that step or removed the rules later, the crons will silently fail
+
+If a cron appears to run but nothing shows up in `<data_dir>/proposed/`, the first thing to check is `~/.claude/settings.json` — see `permissions.md` for the full allowlist that must be present.
+
 ## Why launchd instead of crontab
 
 - Launchd is the native macOS way. crontab still works but is deprecated and has fewer debugging knobs
@@ -28,7 +39,7 @@ For each key in `crons`, bootstrap generates a plist following this template. Ex
         <string>/usr/bin/env</string>
         <string>bash</string>
         <string>-c</string>
-        <string>cd "<repo path>" &amp;&amp; claude -p "/codebase-rizz:learn-from-pr-comments" --output-format stream-json</string>
+        <string>cd "<repo path>" &amp;&amp; claude -p "/codebase-rizz:learn-from-pr-comments" --permission-mode dontAsk --output-format stream-json</string>
     </array>
 
     <key>StartCalendarInterval</key>

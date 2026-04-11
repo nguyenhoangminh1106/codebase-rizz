@@ -132,12 +132,34 @@ After personas are seeded, offer to install launchd cron agents:
 
 If **yes**:
 
-1. **Check the OS**. If not macOS, print: "Cron auto-install is macOS-only in v1. You can still run the subskills manually. On Linux/Windows, you'll need to set up your own scheduler pointing at `claude-code --skill codebase-rizz --subskill <name>`." Skip the cron step and continue.
-2. **Generate one plist per entry** in `rizz.config.json.crons` following the template in `../_shared/crons.md`. Use the slug from the registry entry for the label and file name. Write each plist to `~/Library/LaunchAgents/com.codebase-rizz.<slug>.<cron-key>.plist`.
-3. **Create the log directory**: `mkdir -p ~/.codebase-rizz/logs/<slug>`
-4. **Print the exact `launchctl load` commands** for every plist generated — don't run them automatically, let the user paste. Also print the `launchctl list | grep codebase-rizz` command so they can verify.
+1. **Check the OS**. If not macOS, print: "Cron auto-install is macOS-only in v3. You can still run the subskills manually. On Linux/Windows, you'll need to set up your own scheduler pointing at `claude -p '/codebase-rizz:<skill-name>' --permission-mode dontAsk`." Skip the cron step and continue.
+2. **Install the permissions allowlist** — see "Install the permissions allowlist" section below. This must happen BEFORE writing plists, because crons without permissions will silently auto-deny everything.
+3. **Generate one plist per entry** in `rizz.config.json.crons` following the template in `../_shared/crons.md`. Use the slug from the registry entry for the label and file name. Write each plist to `~/Library/LaunchAgents/com.codebase-rizz.<slug>.<cron-key>.plist`. The plist's command line includes `--permission-mode dontAsk` — this is non-negotiable, the cron will not work without it.
+4. **Create the log directory**: `mkdir -p ~/.codebase-rizz/logs/<slug>`
+5. **Print the exact `launchctl load` commands** for every plist generated — don't run them automatically, let the user paste. Also print the `launchctl list | grep codebase-rizz` command so they can verify.
 
 Bootstrap does not run any cron immediately. The seed drafts are enough; running crons on first bootstrap would write proposals before the user has even seen the initial personas. The first actual cron fires on its next scheduled slot.
+
+### Install the permissions allowlist
+
+Before generating any plists, walk the user through installing the headless-mode allowlist in `~/.claude/settings.json`. Without this, scheduled crons produce zero useful output — Claude auto-denies every `gh` call and every `~/.codebase-rizz/` write because there's no one to approve tool prompts in a non-interactive session.
+
+1. **Read the full allowlist** from `../_shared/permissions.md`. That file is the single source of truth for which rules the crons need. Copy the `allow` array verbatim
+2. **Read the user's existing `~/.claude/settings.json`** if it exists. Preserve every field that isn't `permissions.allow`. If the file doesn't exist, create a new one with only a `permissions` block
+3. **Merge the allowlist** — add every rule from `permissions.md` that isn't already in the user's existing `permissions.allow` array. Don't duplicate rules the user has added themselves. Preserve any existing rules unrelated to codebase-rizz
+4. **Check `permissions.defaultMode`** — if it's missing or already set to `dontAsk`, leave it. If it's set to something else (like `acceptEdits`), warn the user: "Your existing defaultMode is `<X>`. I won't override it — but note that scheduled crons pass `--permission-mode dontAsk` on the command line, which takes precedence at runtime."
+5. **Show the user the proposed final state of the file** and ask for explicit confirmation:
+
+   > I'm about to update `~/.claude/settings.json` with the allowlist needed for scheduled crons to work. Here's what the merged file will look like:
+   >
+   > ```json
+   > { ... pretty-printed final state ... }
+   > ```
+   >
+   > Write this to `~/.claude/settings.json`? (y/n)
+
+6. **On `y`**, atomic-write the file (temp + rename) so a crash mid-write doesn't corrupt the user's global settings. On `n`, skip and warn: "Without the allowlist, your scheduled crons will not produce output. You can add the rules manually later — see `~/.claude/plugins/codebase-rizz/skills/_shared/permissions.md` for the full list."
+7. **Do not proceed to plist generation if the user declined.** Print a clear message: "Skipping plist install. Re-run `/codebase-rizz:bootstrap` once you're ready to install both the allowlist and the crons together."
 
 ## Opt in to auto-review (optional, off by default)
 

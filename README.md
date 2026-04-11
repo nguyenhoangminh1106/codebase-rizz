@@ -202,6 +202,7 @@ codebase-rizz/
         ├── persona-schema.md
         ├── config-schema.md
         ├── crons.md
+        ├── permissions.md
         ├── mcp-install.md
         ├── quality-filter.md
         ├── merge-mechanics.md
