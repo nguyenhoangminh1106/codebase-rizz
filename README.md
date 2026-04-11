@@ -206,7 +206,8 @@ codebase-rizz/
         ├── mcp-install.md
         ├── quality-filter.md
         ├── merge-mechanics.md
-        └── audit-log.md
+        ├── audit-log.md
+        └── notify-queue.md
 ```
 
 Every `skills/<name>/SKILL.md` is an independently invokable slash command. The leading-underscore `_shared/` directory holds reference material the skills cite — it's not a slash command and won't show up in the UI.

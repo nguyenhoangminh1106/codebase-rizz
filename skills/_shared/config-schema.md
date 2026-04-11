@@ -19,7 +19,8 @@ The file lives inside the repo's data directory regardless of storage mode — i
     "track_reconcile": "0 7 * * *",
     "from_codebase": "0 9 * * 0",
     "patterns_drift": "30 9 * * 0",
-    "auto_review": "0 10 * * 0"
+    "auto_review": "0 10 * * 0",
+    "share": "0 8 * * *"
   },
   "auto_review": {
     "mode": "off",
@@ -75,6 +76,7 @@ The file lives inside the repo's data directory regardless of storage mode — i
 | `from_codebase` | `learn/from-codebase` |
 | `patterns_drift` | `learn/patterns-drift` |
 | `auto_review` | `learn/auto-review` (opt-in only, see `auto_review.mode`) |
+| `share` | `share` — daily drain of `.notify-queue.json`, delivers to Gmail/Slack |
 
 If a key is missing from `crons`, bootstrap does not generate a launchd agent for it. A user who only wants the review subskill and no learning loop can set `crons: {}`.
 

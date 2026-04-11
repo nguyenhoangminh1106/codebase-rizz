@@ -90,13 +90,44 @@ Aim for **1500–3500 words**. Shorter and you're not going deep enough. Longer 
 
 Save to `<data_dir>/articles/YYYY-MM-DD-<feature-slug>.md`. The slug should be short and human-readable (`frontend-state-with-zustand`, not `components_new_consolidated_messaging_widget`).
 
-## Step 6 — Report
+## Step 6 — Queue a notification event
+
+After the article is saved, append a `new_article_published` event to `<data_dir>/proposed/.notify-queue.json` following the producer rules in `../_shared/notify-queue.md`. Specifically:
+
+1. Take the queue lock at `<data_dir>/proposed/.notify-queue.lock`
+2. Read the existing queue (or create an empty one if the file doesn't exist)
+3. Check for a dupe — if an event with the same `id` (`art-<YYYY-MM-DD>-<slug>`) already exists, skip the append (this covers launchd catch-up runs that fire the cron twice in a day)
+4. Append a new event with this shape:
+   ```json
+   {
+     "id": "art-2026-04-11-crm-quick-actions",
+     "queued_at": "<ISO 8601 UTC now>",
+     "event": "new_article_published",
+     "retry_count": 0,
+     "payload": {
+       "title": "<article title from the H1>",
+       "slug": "<feature-slug>",
+       "path": "<absolute path to the saved article>",
+       "teaser": "<first 1-2 sentences of the opening hook, max ~300 chars>",
+       "word_count": <count>
+     }
+   }
+   ```
+5. Atomic-write the queue back (`<data_dir>/proposed/.notify-queue.json.tmp` then rename)
+6. Release the lock
+
+The `share` cron (daily 8am by default) will drain this event and deliver it via Gmail and/or Slack if the user has `notifications.events.new_article_published` enabled. If notifications are disabled, the event still gets queued — `share` will silently drop it when it runs. No harm in queuing for a disabled channel; the user can toggle it on later and queued events will deliver.
+
+**Do not call `share` directly.** The plugin doesn't support inter-skill calls, and the queue+cron pattern keeps producers independent of consumers.
+
+## Step 7 — Report
 
 Tell the user:
 - The feature picked and **why it was picked** (one sentence — what was the narrative hook?)
 - A 2-sentence preview of the opening moment
 - The path to the saved article
 - Word count and section headings (so the user can sanity-check that the structure came out right)
+- Confirmation that a delivery event was queued, and when the next `share` cron will fire (or "immediately" if the user runs `/codebase-rizz:share` manually)
 
 ## Anti-patterns — things that make the article fail
 

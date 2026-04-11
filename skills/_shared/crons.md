@@ -86,14 +86,17 @@ rm ~/Library/LaunchAgents/com.codebase-rizz.<slug>.<cron-key>.plist
 
 | Config key | Subskill | Default schedule | Default mode |
 |---|---|---|---|
-| `from_pr_comments` | `learn/from-pr-comments` | daily 6:00 | always on |
-| `from_persona_code` | `learn/from-persona-code` | daily 6:15 | always on |
-| `track_reconcile` | `track/reconcile` | daily 7:00 | always on |
-| `from_codebase` | `learn/from-codebase` | Sunday 9:00 | always on |
-| `patterns_drift` | `learn/patterns-drift` | Sunday 9:30 | always on |
-| `auto_review` | `learn/auto-review` | Sunday 10:00 | **opt-in** via `auto_review.mode` |
+| `from_pr_comments` | `learn-from-pr-comments` | daily 6:00 | always on |
+| `from_persona_code` | `learn-from-persona-code` | daily 6:15 | always on |
+| `track_reconcile` | `track-reconcile` | daily 7:00 | always on |
+| `share` | `share` | daily 8:00 | always on (drains `.notify-queue.json`) |
+| `from_codebase` | `learn-from-codebase` | Sunday 9:00 | always on |
+| `patterns_drift` | `learn-patterns-drift` | Sunday 9:30 | always on |
+| `auto_review` | `learn-auto-review` | Sunday 10:00 | **opt-in** via `auto_review.mode` |
 
-The five "always on" crons only write to `<data_dir>/proposed/` — they never touch knowledge files. `auto_review` is the only cron with permission to modify `patterns.md` and persona files, and only if the user has explicitly opted in. Bootstrap will not generate a launchd plist for `auto_review` unless `auto_review.mode` is `dry_run` or `on`.
+The five "always on" learning crons only write to `<data_dir>/proposed/` — they never touch knowledge files. The `share` cron is also always on but does no learning — it just drains the notification queue and delivers events to Gmail/Slack (or silently skips if notifications are disabled). `auto_review` is the only cron with permission to modify `patterns.md` and persona files, and only if the user has explicitly opted in. Bootstrap will not generate a launchd plist for `auto_review` unless `auto_review.mode` is `dry_run` or `on`.
+
+Ordering: `share` runs after the daily learn crons but before the weekly ones so that any events queued by Monday-Friday learning runs get delivered that same morning. On Sundays, `share` at 8:00 delivers any remaining events from the previous week, then the weekly crons at 9:00/9:30/10:00 generate new content that will be delivered by Monday morning's 8:00 share run.
 
 ## Cron expression translation
 

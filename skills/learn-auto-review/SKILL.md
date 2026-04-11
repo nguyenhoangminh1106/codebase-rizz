@@ -98,7 +98,31 @@ Rollback any merge: /codebase-rizz:rollback
 
 Always print this summary to the log (stdout/stderr of the launchd run, or the interactive output if invoked manually). It ends up in `~/.codebase-rizz/logs/<slug>/learn-auto-review.log`, which is the user's source of truth for what happened.
 
-If `notifications.enabled` and `notifications.events.auto_review_complete` is `true`, also write the summary to `<data_dir>/proposed/.auto-review-notify-queue.json` so that the next run of `/codebase-rizz:share` (manual or scheduled) picks it up and delivers via Gmail/Slack/fallback. This handoff-through-file pattern avoids cross-skill calls while still letting the user configure notification routing once in share-setup.
+After the run — regardless of whether notifications are currently enabled — append an `auto_review_complete` event to the unified notification queue at `<data_dir>/proposed/.notify-queue.json`. Follow the producer rules in `../_shared/notify-queue.md`:
+
+1. Take the lock at `<data_dir>/proposed/.notify-queue.lock`
+2. Read the existing queue (or create an empty one)
+3. Check for dupes — if an event with `id: "ar-<YYYY-MM-DD>-<HH-MM>"` already exists, skip
+4. Append:
+   ```json
+   {
+     "id": "ar-2026-04-13-10-00",
+     "queued_at": "<ISO 8601 UTC now>",
+     "event": "auto_review_complete",
+     "retry_count": 0,
+     "payload": {
+       "merged": <count>,
+       "rejected": <count>,
+       "skipped": <count>,
+       "log_path": "<absolute path to .auto-review-log>"
+     }
+   }
+   ```
+5. Atomic-write and release the lock
+
+The `share` cron drains this event on its next run. If the user hasn't enabled notifications or has muted `auto_review_complete`, `share` will silently drop the event. No cross-skill calls, no direct delivery — queue-and-drain is the pattern.
+
+**Do NOT write to `.auto-review-notify-queue.json`** — that was an earlier design that was superseded by the unified `.notify-queue.json`. If you see any reference to the old file name elsewhere, it's stale and should be updated to use the unified queue.
 
 ## Failure modes
 

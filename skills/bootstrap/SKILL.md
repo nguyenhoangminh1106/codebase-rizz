@@ -83,7 +83,8 @@ Create `<data_dir>/rizz.config.json` with sensible defaults. See `../_shared/con
     "track_reconcile": "0 7 * * *",
     "from_codebase": "0 9 * * 0",
     "patterns_drift": "30 9 * * 0",
-    "auto_review": "0 10 * * 0"
+    "auto_review": "0 10 * * 0",
+    "share": "0 8 * * *"
   },
   "auto_review": {
     "mode": "off",

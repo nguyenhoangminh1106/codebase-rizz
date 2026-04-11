@@ -1,45 +1,64 @@
 ---
 name: share
-description: Send codebase-rizz updates (new proposed patterns, new articles, ownership mismatches) out to configured channels — Gmail via Gmail MCP, Slack via Slack MCP, or a markdown fallback file if nothing is configured. Reads notification settings from rizz.config.json. Use when the user runs `share` manually, or when a cron invokes it at the end of a learn pipeline.
+description: Drain the notification queue and deliver pending events (new articles, auto-review summaries, ownership mismatches, etc.) via configured channels — Gmail MCP, Slack MCP, or a markdown fallback. Runs as a daily cron that processes everything queued by other skills since the last run. Can also be invoked manually to force an immediate drain. Never blocks, retries up to 3 times per event, drops stale events after 30 days, and logs every delivery attempt.
 ---
 
 # share
 
-Sends notifications for codebase-rizz events. The runtime sender, not the setup flow — for first-time configuration see `share/setup/SKILL.md`.
+The notification dispatcher. Reads `<data_dir>/proposed/.notify-queue.json`, delivers each queued event through the channels the user configured in `rizz.config.json`, and removes events from the queue on success. Retries failures up to 3 times, then drops and logs.
+
+For the queue format, producer rules, and event payloads, see `../_shared/notify-queue.md`. This subskill is the **consumer** — producers are other skills that append events to the queue (currently `learn-from-codebase` and `learn-auto-review`).
+
+For first-time notification setup (which channels, which recipients, which events), see `share-setup`.
 
 ## Before doing anything
 
-Run the preflight from `../_shared/paths.md` to resolve `<data_dir>` for the current repo. Stop with the guidance in that file if any preflight step fails.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>` for the current repo. When running as a cron across multiple repos, iterate every registry entry and drain each repo's queue independently.
 
-## Inputs
+## Schedule
 
-- **event**: required. One of `learn_proposals_ready`, `new_article_published`, `ownership_mismatch_detected`. Other subskills pass this when they invoke share. When a user runs `share` manually, default to `learn_proposals_ready` and ask for confirmation
-- **payload**: required. A structured summary of what to share (new pattern proposals, article metadata, mismatch findings). Format varies by event — see "Payload shapes" below
+Default: daily at 8:00am. Configured via `crons.share` in `rizz.config.json` and loaded as a launchd user agent by bootstrap. See `../_shared/crons.md`.
 
-## Preflight
+Unlike the learning crons, share is always-on — it has no `auto_review`-style opt-in mode. If the user doesn't want notifications, they set `notifications.enabled: false` in config (or leave it off at bootstrap) and the cron becomes a silent no-op that drains nothing.
 
-1. Read `<data_dir>/rizz.config.json`. If `notifications` is missing or `notifications.enabled` is `false`, stop silently and write a one-line skip entry to the log. This is not an error — the user has explicitly disabled notifications
-2. Check `notifications.events[<event>]`. If the matching key is `false`, stop silently and log. Per-event toggles let the user mute specific noise without disabling everything
-3. For each channel with `enabled: true`, verify the required MCP is reachable:
-   - **Gmail**: check that a Gmail MCP tool (any tool whose name starts with `mcp__` and mentions gmail) is available in the current session. If missing, log the failure and continue to the next channel — don't block the whole send because one channel is down
-   - **Slack**: same check for Slack MCP tools
-4. If no channels are configured at all (both `gmail.enabled` and `slack.enabled` are false), fall through to the markdown fallback described below
+## The drain procedure
 
-## Formatting per channel
+This is the core loop. Every run, from start to finish.
 
-### Gmail (HTML email)
+1. **Take the queue lock.** Create `<data_dir>/proposed/.notify-queue.lock`. If it already exists and is younger than 60 seconds, wait up to 5 seconds then bail (another `share` run is in progress). If the lock is older than 60 seconds, treat it as stale (crash recovery) and proceed
+2. **Read the config.** Load `<data_dir>/rizz.config.json`. If `notifications.enabled` is false or missing, the user has notifications turned off. Do NOT drop the queue — events stay in place so that if the user re-enables notifications later, the backlog still gets delivered. Just release the lock and exit
+3. **Read the queue.** Load `<data_dir>/proposed/.notify-queue.json`. If it doesn't exist or is empty, release the lock and exit cleanly — nothing to do
+4. **Drop stale events.** For every event with `queued_at` older than 30 days, remove it from the queue and append a failure-log entry with `reason: "stale, dropped after 30 days"`. Stale events indicate the user has been away too long to care about old notifications
+5. **Process remaining events in order.** For each event:
+   - Read `notifications.events[<event.event>]` from config
+     - If missing or false → silently remove the event from the queue. The user has muted this event type. Log nothing, no retry
+     - If true → proceed to delivery
+   - Determine enabled channels (`notifications.channels.gmail.enabled`, `notifications.channels.slack.enabled`)
+   - For each enabled channel, attempt delivery (see "Delivery" below). Track per-channel success/failure
+   - **If all enabled channels succeeded** → remove this event from the queue. Log each successful delivery to `<data_dir>/proposed/.notification-log`
+   - **If any enabled channel failed** → increment `event.retry_count`
+     - If `retry_count >= 3` → drop the event, append failure-log entry, log each per-channel failure for the record
+     - Otherwise → leave the event in the queue with the incremented retry count. The next `share` run will retry
+   - **If no channels are enabled** → fall through to the markdown fallback (see below). Treat as success, remove from queue
+6. **Atomic-write the updated queue.** Temp + rename
+7. **Release the lock**
+8. **Print the run summary** — how many events delivered, how many dropped (stale or max retries), how many still in queue for later
 
-Gmail MCPs typically accept a `subject`, a recipient list, and a `body` (HTML or plain text). Build an HTML body with inline CSS — most mail clients strip external stylesheets:
+## Delivery per channel
+
+### Gmail (via Gmail MCP)
+
+Detect available Gmail MCP tools by looking for any tool whose name starts with `mcp__` and contains `gmail`. If none found, mark Gmail as unreachable for this run, continue to other channels (but this event's delivery counts as a failure for the Gmail channel, contributing to the retry count if no other channel succeeds either).
+
+Build an HTML body with inline CSS — most mail clients strip external stylesheets:
 
 ```html
 <div style="font-family: -apple-system, sans-serif; max-width: 600px;">
   <h2 style="color: #1a1a1a;"><event-specific heading></h2>
   <p style="color: #555;"><one-line summary></p>
-  <table style="width: 100%; border-collapse: collapse;">
-    <!-- one row per item in the payload -->
-  </table>
+  <!-- event-specific content block -->
   <p style="margin-top: 24px;">
-    <a href="<link to the proposed file or article>"
+    <a href="<link>"
        style="background: #1a1a1a; color: white; padding: 10px 18px;
               text-decoration: none; border-radius: 6px;">
       View details
@@ -51,16 +70,21 @@ Gmail MCPs typically accept a `subject`, a recipient list, and a `body` (HTML or
 </div>
 ```
 
-Subject line is event-dependent:
-- `learn_proposals_ready` → `[codebase-rizz] <N> new pattern proposals for <repo>`
+Subject lines by event type:
 - `new_article_published` → `[codebase-rizz] New article: <title>`
+- `auto_review_complete` → `[codebase-rizz] Auto-review: merged <N>, skipped <M>`
 - `ownership_mismatch_detected` → `[codebase-rizz] Ownership mismatch in <repo>`
+- `learn_proposals_ready` → `[codebase-rizz] <N> new proposals for <repo>`
 
-Send once per recipient in `notifications.channels.gmail.recipients`. If a send fails for one recipient, continue with the rest.
+Send once per recipient in `notifications.channels.gmail.recipients`. Per-recipient failures are per-recipient — one bad address doesn't fail the whole Gmail channel. A channel is "successful" if at least one recipient succeeded.
 
-### Slack (Block Kit)
+Emails send from the user's own authenticated Gmail address. Recipients see the user as the sender.
 
-Slack MCPs typically accept a channel name and a list of blocks. Block Kit lets the message look like a real app, not a chat paste:
+### Slack (via Slack MCP)
+
+Detect Slack MCP the same way — look for `mcp__*slack*` tools. If none, Slack channel is unreachable for this run.
+
+Build a Block Kit payload:
 
 ```json
 {
@@ -76,7 +100,7 @@ Slack MCPs typically accept a channel name and a list of blocks. Block Kit lets 
     },
     {
       "type": "section",
-      "text": { "type": "mrkdwn", "text": "<bulleted list of items from payload>" }
+      "text": { "type": "mrkdwn", "text": "<event-specific body>" }
     },
     {
       "type": "actions",
@@ -90,46 +114,94 @@ Slack MCPs typically accept a channel name and a list of blocks. Block Kit lets 
 }
 ```
 
-Post once per channel in `notifications.channels.slack.channels`. Continue on per-channel failure.
+Post once per channel in `notifications.channels.slack.channels`. Per-channel failures are per-channel — if `#engineering` is archived but `#codebase-rizz` works, the Slack channel is successful for this event.
+
+Messages post as the official Claude Slack app (set up via `share-setup` and `../_shared/mcp-install.md`).
 
 ### Fallback (markdown file)
 
-If both channels are disabled or both MCPs are unreachable, write a markdown file to `<data_dir>/shared/<event>-YYYY-MM-DD.md` with the same content as the email HTML (but rendered as markdown). Tell the user the path and suggest they copy-paste into their team's channel of choice.
+If **no channels are configured** (both `gmail.enabled` and `slack.enabled` are false), write the event's content to `<data_dir>/shared/<event_type>-<YYYY-MM-DD>-<id>.md` and treat as delivered.
 
-The fallback is not a failure mode — it's a deliberate option for users who don't want to set up MCPs.
+The fallback is not triggered when channels ARE configured but both fail — that's a real failure and retries. The fallback is only for users who deliberately chose not to set up MCPs.
 
-## Payload shapes
+## Event-specific message content
 
-Callers pass a structured payload so `share` doesn't have to know anything about the event's content. Shapes:
+For each event type, build the content that goes inside the message body. The schema is defined in `../_shared/notify-queue.md` under "Event payloads"; the content below describes what the reader sees.
 
-- **`learn_proposals_ready`** — `{ proposals: [{ kind: "pattern" | "persona", title, one_liner, link }] }`
-- **`new_article_published`** — `{ title, slug, teaser, link, word_count }`
-- **`ownership_mismatch_detected`** — `{ mismatches: [{ assigned_to, actual_author, pr_link }] }`
+### `new_article_published`
 
-Subskills that want to notify should build the payload explicitly and hand it to `share` — don't rely on `share` to go read files and infer the content.
+- **Heading**: `📄 New article: <title>`
+- **One-line summary**: The teaser from the payload (`payload.teaser`)
+- **Body**: A short inline preview — first paragraph or two of the article if it fits, truncated to ~500 characters for Gmail and ~200 for Slack. Include the word count as a small context line ("2,841 words · 8 min read")
+- **Link**: `payload.path` — the absolute path to the article markdown file (Gmail users open it locally; Slack users see the path as a clickable code block they can copy)
+
+### `auto_review_complete`
+
+- **Heading**: `🤖 Auto-review ran on <date>`
+- **One-line summary**: `Merged <N> patterns, rejected <M> items, <K> skipped for your review.`
+- **Body**: Bullet list with counts and one sentence about what to do next (e.g., "Review `<data_dir>/proposed/.auto-review-log` to see what changed. Run `/codebase-rizz:rollback` to reverse any bad merge.")
+- **Link**: `payload.log_path` — path to the audit log
+
+### `ownership_mismatch_detected`
+
+- **Heading**: `⚠️ Ownership mismatch in <repo>`
+- **One-line summary**: `Found <N> mismatch(es) between assignments and actual PR authors.`
+- **Body**: List each mismatch with PR link, assigned engineer, actual author. Suggest running `/codebase-rizz:track-assign` to correct
+- **Link**: First mismatch's PR link, or the feature-ownership.md path
+
+### `learn_proposals_ready`
+
+- **Heading**: `📋 <N> new proposals ready to review`
+- **One-line summary**: `<N> new patterns and/or persona updates are waiting in your proposed/ folder.`
+- **Body**: Breakdown (X patterns, Y persona updates) with one-liner per item from the payload
+- **Link**: The proposed folder path
 
 ## Logging
 
-After each send attempt (success or failure, per recipient, per channel), append a line to `<data_dir>/proposed/.notification-log`:
+Two log files, both append-only:
+
+**`<data_dir>/proposed/.notification-log`** — one line per delivery attempt (success or failure):
 
 ```
-2026-04-11T07:00:12Z  learn_proposals_ready  gmail  team@company.com  ok
-2026-04-11T07:00:13Z  learn_proposals_ready  gmail  minh@company.com  ok
-2026-04-11T07:00:14Z  learn_proposals_ready  slack  #engineering     failed: channel not found
+2026-04-11T08:00:12Z  new_article_published  gmail  team@company.com  ok
+2026-04-11T08:00:13Z  new_article_published  slack  #engineering  failed: channel_not_found
+2026-04-11T08:00:13Z  new_article_published  slack  #codebase-rizz  ok
 ```
 
-This log is the user's window into whether notifications are actually going out. The next interactive skill invocation should surface recent failures.
+**`<data_dir>/proposed/.notify-failure-log`** — one JSON line per event that was dropped (max retries or stale):
 
-## Reporting back
+```json
+{"ts":"2026-04-14T08:00:12Z","event_id":"art-2026-04-11-crm-quick-actions","event_type":"new_article_published","reason":"max retries exceeded","last_error":"Gmail MCP timed out after 30s","retry_count":3}
+```
 
-For each event handled:
-- Which channels were tried
-- Per-recipient success/failure
-- Path to the fallback file if used
-- Total count (e.g., "sent to 2 gmail recipients, 1 slack channel, 0 failures")
+Both logs are user-facing diagnostics. The next time a user runs anything interactive, surface the last few failure-log entries if they exist.
+
+## Manual invocation
+
+When a user runs `/codebase-rizz:share` interactively (not via cron), the behavior is identical to the cron: drain the queue, process in order, log everything. The difference is that interactive runs also print the human-readable summary to stdout:
+
+```
+Drained 3 events from the queue:
+  ✓ new_article_published (art-2026-04-11-crm-quick-actions) → gmail (2), slack (1)
+  ✓ auto_review_complete (ar-2026-04-13-10-00) → gmail (2), slack (1)
+  ✗ ownership_mismatch_detected (om-2026-04-11-07-00) → gmail failed (recipient bounced), slack ok
+
+2 succeeded, 1 retrying (retry 1/3). 0 events still queued.
+```
 
 ## What share does NOT do
 
-- Does not decide what to say — it formats whatever payload the caller provides
-- Does not retry failed sends — failures go to the log, the user decides what to do
-- Does not modify `rizz.config.json` — setup is the only thing that writes config
+- **Does not decide what to notify about.** Producers decide by appending to the queue. Share just delivers whatever is there
+- **Does not modify `rizz.config.json`.** Setup is the only skill that writes config
+- **Does not retry in a tight loop.** One attempt per cron run. 3 failed runs = event dropped
+- **Does not deliver events in parallel.** Sequential processing, per event, per channel. Keeps logs clean and MCP rate limits predictable
+- **Does not "catch up" stale events aggressively.** 30-day cutoff is a hard drop, not a last-ditch delivery attempt
+- **Does not touch the markdown fallback when channels are configured.** If Gmail and Slack are both down for real, the event retries until max retries, then goes to the failure log — not to a fallback file. Fallback is only for users who deliberately skipped MCP setup
+
+## Failure modes
+
+- **Queue file missing** — nothing to drain, exit cleanly. Don't create an empty file; the producer will create it when it has something to queue
+- **Queue file corrupt (invalid JSON)** — do NOT truncate or overwrite. Move the corrupt file aside (`.notify-queue.json.corrupt-<ts>`), write a fresh empty queue, log a failure-log entry pointing at the backup, and exit. The user can inspect the backup and manually recover
+- **Lock file stuck** — if the lock is older than 60 seconds, assume crash recovery and proceed. Log a warning
+- **Config file missing** — tell the user to run `/codebase-rizz:bootstrap`, exit
+- **No MCPs available and no fallback path set** — treat the current run as a total failure, don't remove any events from the queue, log a clear diagnostic. The user fixes their setup and the next run succeeds
