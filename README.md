@@ -128,7 +128,8 @@ Every capability is a separately invokable slash command under the `/codebase-ri
 | `/codebase-rizz:learn-from-codebase` | Pick one un-documented feature and write a narrative technical article about it (also weekly cron) |
 | `/codebase-rizz:learn-patterns-drift` | Check whether patterns in `patterns.md` are being violated silently in merged code (also weekly cron) |
 | `/codebase-rizz:learn-auto-review` | Opt-in: have Claude review pending proposals and merge the clearly-good ones (weekly cron, default off) |
-| `/codebase-rizz:rollback` | Undo a recent auto-review merge via the audit log |
+| `/codebase-rizz:merge` | Interactive human-driven walkthrough of pending proposals — accept, reject, edit, or skip each item |
+| `/codebase-rizz:rollback` | Undo a recent merge (from either `merge` or `auto-review`) via the audit log |
 | `/codebase-rizz:track-assign` | Record that an engineer is building a feature |
 | `/codebase-rizz:track-reconcile` | Verify ownership log against real PR activity (also daily cron) |
 | `/codebase-rizz:migrate` | Move a repo's data between global and repo-local storage |
@@ -187,6 +188,7 @@ codebase-rizz/
     ├── learn-from-codebase/SKILL.md
     ├── learn-patterns-drift/SKILL.md
     ├── learn-auto-review/SKILL.md
+    ├── merge/SKILL.md
     ├── rollback/SKILL.md
     ├── track-assign/SKILL.md
     ├── track-reconcile/SKILL.md
@@ -200,7 +202,10 @@ codebase-rizz/
         ├── persona-schema.md
         ├── config-schema.md
         ├── crons.md
-        └── mcp-install.md
+        ├── mcp-install.md
+        ├── quality-filter.md
+        ├── merge-mechanics.md
+        └── audit-log.md
 ```
 
 Every `skills/<name>/SKILL.md` is an independently invokable slash command. The leading-underscore `_shared/` directory holds reference material the skills cite — it's not a slash command and won't show up in the UI.

@@ -11,8 +11,8 @@ Backfill is **not a cron**. It only runs when the user invokes it directly. And 
 
 ## Before doing anything
 
-1. **Resolve `<data_dir>`** for the current repo via the registry lookup in `../_shared/paths.md`. If the lookup fails, tell the user to run `bootstrap` first
-2. **Run the gh preflight** — backfill scans large volumes of PRs and will fail loudly without it
+1. **Run the path preflight** from `../_shared/paths.md` to resolve `<data_dir>` for the current repo
+2. **Run the gh preflight** from `../_shared/gh-preflight.md` — backfill scans large volumes of PRs and will fail loudly without it
 3. **Verify `trusted_reviewers` is populated** in `<data_dir>/rizz.config.json`. If empty, stop and tell the user to add at least one username. Backfill never learns from an uncurated firehose — the same rule as the daily cron, only more so
 
 ## The interactive scope prompt
@@ -86,37 +86,11 @@ Filter the comments to only those authored by users in `trusted_reviewers`. Drop
 
 If you hit the `gh` rate limit mid-fetch, save progress to `<data_dir>/proposed/.backfill-state.json` (PRs processed so far) and tell the user to re-run backfill with the same scope later — the state file lets it resume.
 
-## The quality filter (the whole point of this subskill)
+## The quality filter
 
-For each candidate observation (a theme extracted from one or more review comments), apply this test verbatim:
+Apply the shared quality filter from `../_shared/quality-filter.md` to every candidate observation (a theme extracted from one or more review comments). The filter's one-sentence test, the PASS/FAIL examples, and the "when in doubt, drop" rule all live in that file — read it before running backfill and don't restate the criteria here.
 
-> **If this observation were stripped of its PR context and shown to a mid-level engineer on a different team, would they learn something about code quality, design, or tradeoff reasoning that would transfer to their own work?**
->
-> - If yes → candidate
-> - If no → drop
-
-**Things that PASS this test:**
-
-- "Prefer X over Y because Z" — where Z is a real constraint (perf, safety, reusability, a non-obvious subtlety)
-- "This abstraction boundary exists because..."
-- "We tried the obvious approach and it broke, so now we do..."
-- "The tradeoff between A and B is X, and we chose B in this codebase because..."
-- Anti-patterns the team actively catches in review with a stated reason
-- Design decisions that push back on common defaults with explanation
-
-**Things that FAIL this test:**
-
-- "Use camelCase for variables" — style, not design
-- "Extract this into a helper function" — readability only, no deeper principle
-- "Add a null check here" — boilerplate
-- "Rename this variable" — naming, not teaching
-- "This file is too long" — no underlying design principle
-- "Use const instead of let" — lint rule, not team pattern
-- Typo fixes, formatting fixes, whitespace, import ordering
-- Anything obvious from reading a language tutorial
-- Any observation that boils down to "the engineer knows the language well"
-
-The filter is a **teaching test**, not a correctness test. The question is always "will this make the reader better at judging tradeoffs?" If the answer is "maybe," drop it.
+The filter is the **whole point** of backfill. A backfill run that doesn't apply the filter strictly produces exactly the junk it's supposed to prevent: a polluted `patterns.md` full of style nitpicks and readability refactors dressed up as team wisdom. Because backfill scans much larger windows than the daily crons, the filter matters even more here — noise volume scales with window size.
 
 ## Thresholds (stricter than daily cron)
 

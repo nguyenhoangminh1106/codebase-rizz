@@ -9,7 +9,7 @@ Interactive setup for notifications. This subskill writes config; the runtime `s
 
 ## Before doing anything
 
-Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. If the lookup fails, tell the user to run `bootstrap` first.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>` for the current repo. Stop with the guidance in that file if any preflight step fails.
 
 ## Step 1 — Explain what's happening
 

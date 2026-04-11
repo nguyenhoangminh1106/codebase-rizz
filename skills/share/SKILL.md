@@ -9,7 +9,7 @@ Sends notifications for codebase-rizz events. The runtime sender, not the setup 
 
 ## Before doing anything
 
-Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. If the lookup fails, tell the user to run `bootstrap` and stop.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>` for the current repo. Stop with the guidance in that file if any preflight step fails.
 
 ## Inputs
 

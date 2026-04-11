@@ -9,7 +9,7 @@ A separate, opt-in cron that has permission to modify knowledge files. Every oth
 
 ## Before doing anything
 
-1. Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. As a multi-repo cron, iterate the registry and handle each repo independently
+1. Run the preflight from `../_shared/paths.md` to resolve `<data_dir>`. As a multi-repo cron, iterate every registry entry and run the preflight per repo; skip non-bootstrapped repos with a warning
 2. Read `<data_dir>/rizz.config.json` and check `auto_review.mode`. If missing or `off`, stop silently — this repo has not opted in. If `dry_run`, proceed but write to a dry-run log instead of touching real files. If `on`, proceed normally
 
 ## Schedule
@@ -65,20 +65,9 @@ Items beyond the cap stay in the proposal file and get re-considered next run.
 
 ## Applying a merge
 
-For a pattern merge:
-1. Read current `<data_dir>/patterns.md`
-2. Determine the next pattern number (scan existing headings for `## Pattern #<N>:`)
-3. Append the new pattern at the end of the file, following the existing formatting
-4. Include the source PR links and reviewer names from the proposal's evidence
-5. Remove the merged item from the proposal file. If the file had only one item, delete the file. If it had multiple, rewrite it with the remaining items
+Follow the procedure in `../_shared/merge-mechanics.md`. That file defines the exact steps (append to the right section, preserve existing formatting, atomic write, clean up the proposal, write the audit log entry, idempotency check, concurrency lock). Every merge from this skill uses the same procedure as `merge` (the human-driven equivalent) so `rollback` can reverse either one.
 
-For a persona merge:
-1. Read current `<data_dir>/personas/<username>.md`
-2. Determine which section to append to (`## Principles`, `## Anti-patterns`, `## Example PRs`, `## Notes from review comments`)
-3. Append the new item at the end of that section
-4. Remove the merged item from the proposal file
-
-All file writes use atomic rename (write to `.tmp`, then `mv`) so a crash mid-write doesn't corrupt the target.
+When calling the shared merge mechanics from this subskill, set `decision_source: "auto-review"` and build the `decision_reason` from the criteria Claude used to approve the merge (e.g. `"3 reviewers, clear why, confidence 0.91"`).
 
 ## Dry-run mode
 
@@ -91,15 +80,9 @@ When `auto_review.mode` is `dry_run`:
 
 ## Audit log
 
-Every decision (in any mode) appends one JSON line to `<data_dir>/proposed/.auto-review-log`:
+Every decision (in any mode) appends one JSON line to `<data_dir>/proposed/.auto-review-log`. The schema, fields, and invariants are defined in `../_shared/audit-log.md` — follow it exactly so `rollback` can parse every entry regardless of which skill wrote it.
 
-```json
-{"ts":"2026-04-11T10:00:12Z","mode":"on","decision":"merge","target":"patterns.md","item_title":"Prefer findUnique...","reason":"3 reviewers, clear why, high confidence","diff_applied":"<exact appended text>","proposal_file":"proposed/patterns/2026-04-10.md"}
-{"ts":"2026-04-11T10:00:13Z","mode":"on","decision":"reject","item_title":"Use const instead of let","reason":"style/lint rule, not a team pattern","proposal_file":"proposed/patterns/2026-04-10.md"}
-{"ts":"2026-04-11T10:00:14Z","mode":"on","decision":"skip","item_title":"Amendment to pattern #7","reason":"amendments always skip","proposal_file":"proposed/patterns/2026-04-10.md"}
-```
-
-The `diff_applied` field is critical — it's what `rollback/` reads to undo a merge. Without it, rollback can't precisely reverse a decision.
+For auto-review entries, set `source: "auto-review"` and include the current `auto_review.mode` in the `mode` field. Every `merge` decision must include the `diff_applied` field with the exact appended text — without it, rollback cannot reverse the decision.
 
 ## Notifying the user
 

@@ -9,7 +9,7 @@ Weekly cron. Keeps `patterns.md` honest by checking whether the rules are actual
 
 ## Before doing anything
 
-Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. Iterate the registry when running as a cron; skip repos whose `patterns.md` doesn't exist yet.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>`. When running as a cron, iterate every registry entry and run the preflight per repo; skip repos whose `patterns.md` does not exist yet with a warning.
 
 ## Schedule
 

@@ -9,18 +9,22 @@ The safety net for `learn/auto-review`. When Claude merges something the user di
 
 ## Before doing anything
 
-Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. If the lookup fails, tell the user to run `bootstrap` and stop.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>` for the current repo. Stop with the guidance in that file if any preflight step fails.
 
 ## Read the audit log
 
-Open `<data_dir>/proposed/.auto-review-log`. Each line is a JSON object with fields `ts`, `mode`, `decision`, `target`, `item_title`, `reason`, `diff_applied`, `proposal_file`.
+Open `<data_dir>/proposed/.auto-review-log`. The schema is defined in `../_shared/audit-log.md` — read that file for the full field list, meanings, and invariants. This subskill only needs a subset:
 
-Filter to:
-- `decision == "merge"` (you can't roll back a reject or skip — rejects are gone, skips didn't change anything)
-- `mode == "on"` (dry-run entries never actually merged, nothing to undo)
-- Recent entries first (sort by `ts` descending)
+- `ts` — to sort and display
+- `source` — to distinguish human `merge` decisions from `auto-review` decisions (rollback handles both)
+- `decision` — filter to `"merge"` only (you can't roll back a reject or skip — rejects are gone, skips didn't change anything)
+- `mode` — exclude entries where `mode == "dry_run"`, since those never actually touched files
+- `target_file` — to read and modify the right file
+- `item_title` — to show the user what they're about to undo
+- `diff_applied` — the exact text to remove from the target file
+- `proposal_file` — to build the rollback proposal file for potential re-review
 
-If the log is empty or has no merge entries, tell the user "no auto-merges to roll back" and stop.
+Sort remaining entries by `ts` descending. If the log is empty or has no mergeable entries, tell the user "no auto-merges to roll back" and stop.
 
 ## Show the user the merge history
 

@@ -25,6 +25,7 @@
         "./skills/learn-from-codebase",
         "./skills/learn-patterns-drift",
         "./skills/learn-auto-review",
+        "./skills/merge",
         "./skills/rollback",
         "./skills/track-assign",
         "./skills/track-reconcile",

@@ -9,7 +9,7 @@ Weekly cron. Every Sunday morning, pick one feature that hasn't been written abo
 
 ## Before doing anything
 
-Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. As a multi-repo cron, iterate the registry and pick at most one feature per repo per run. Articles are always written to `<data_dir>/articles/` — there is no alternate output path.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>`. As a multi-repo cron, iterate every entry in the registry and pick at most one feature per repo per run. Articles are always written to `<data_dir>/articles/`.
 
 ## Schedule
 

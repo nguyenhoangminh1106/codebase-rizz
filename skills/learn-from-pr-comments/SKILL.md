@@ -9,7 +9,7 @@ Daily cron. Reads the recent review comments on merged PRs, finds themes that re
 
 ## Before doing anything
 
-Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. When this subskill runs as a cron across multiple repos, iterate the registry and resolve once per repo. If a repo's lookup fails (never bootstrapped), skip it with a warning.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>`. When running as a cron across multiple repos, iterate every registry entry and run the preflight per repo; skip non-bootstrapped repos with a warning.
 
 ## Schedule
 
@@ -65,9 +65,9 @@ Since the last successful run of this cron. Track the last-run timestamp at `<da
 
 ## Constraints
 
-- **Never edit `patterns.md` directly.** Proposals only. The human merges manually — usually by reviewing the proposal file, deciding which to accept, and editing `patterns.md` themselves. This preserves the signal-to-noise ratio and keeps the skill from self-poisoning on bad comments.
-- **Don't propose things that are just language-specific style.** "Use const instead of let" isn't a team pattern, it's a linter rule. Focus on architectural, domain, and review-taste signals.
-- **Don't propose patterns derived from a single engineer's comments.** Persona-specific taste goes in `learn/from-persona-code`, not here. A true team pattern shows up in comments from multiple reviewers.
+- **Never edit `patterns.md` directly.** Proposals only. The human (or the opt-in `learn-auto-review` cron) merges them into `patterns.md`. This preserves the signal-to-noise ratio and keeps the cron from self-poisoning on bad comments
+- **Apply the shared quality filter** from `../_shared/quality-filter.md` before proposing anything. Linter rules, style, formatting, and language-tutorial observations all fail the filter — the file spells out the full PASS/FAIL list and the teaching test. Don't restate the criteria here
+- **Don't propose patterns derived from a single engineer's comments.** Persona-specific taste goes in `learn-from-persona-code`, not here. A true team pattern shows up in comments from multiple trusted reviewers
 
 ## What to report back (when run manually)
 

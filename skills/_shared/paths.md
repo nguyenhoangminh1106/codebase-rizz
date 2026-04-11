@@ -60,34 +60,61 @@ Example: `git@github.com:paraform-xyz/paraform.git` → `github.com-paraform-xyz
 
 If the repo has no remote (fresh `git init`), fall back to the parent dir name with a `local-` prefix: `local-my-experiment`. Warn the user that slugs for remote-less repos are fragile.
 
-## The lookup function every subskill needs
+## Preflight — every skill runs this first
 
-Before any subskill reads or writes knowledge, it must resolve the `data_dir` for the current repo. Pseudocode:
+Every skill in the plugin (except `bootstrap`, `migrate`, and `upgrade`, which manage the registry itself) must run this preflight before doing anything else. Skills should reference this section rather than re-stating it in their own SKILL.md — keeping the logic in one place means one change here propagates everywhere.
 
-```
-1. Read ~/.codebase-rizz/registry.json. If it doesn't exist, tell the user to run install.sh.
-2. Get the current repo path: `git rev-parse --show-toplevel`
-   - If this fails, the user isn't in a git repo. Tell them and stop.
-3. Look up the entry in registry.repos where path == current repo path.
-   - If no match, the repo hasn't been bootstrapped. Tell the user to run `bootstrap`.
-4. Return entry.data_dir. Every subsequent file read/write uses this as the base path.
-```
+Steps, in order:
+
+1. **Verify the user is in a git repo.** Run `git rev-parse --show-toplevel`. If it fails, tell the user to `cd` into the repo they want to work on and stop
+2. **Read the registry.** Open `~/.codebase-rizz/registry.json`. If it doesn't exist, tell the user to run `install.sh` (or `/plugin install codebase-rizz@codebase-rizz`) and stop
+3. **Look up the current repo.** Find the entry in `registry.repos` where `path` matches the current repo path from step 1. If no match, tell the user to run `/codebase-rizz:bootstrap` first and stop
+4. **Return `data_dir`** from the matching entry. Every file read/write in the subskill uses this as the base path
+5. **Validate `data_dir` exists on disk.** If the registry points at a directory that has been deleted or moved, tell the user to run `/codebase-rizz:migrate` or edit the registry by hand. This catches corrupted state early
+
+The preflight does NOT include the gh CLI check — that's a separate concern handled by `gh-preflight.md` and only runs for skills that actually call gh.
+
+## Data directory layout
 
 Inside `data_dir`, the layout is always the same regardless of storage mode:
 
 ```
 <data_dir>/
-├── rizz.config.json
-├── personas/
-├── patterns.md
-├── feature-ownership.md
-├── articles/
-└── proposed/
-    ├── patterns/
-    └── personas/
+├── rizz.config.json            # repo config: personas, trusted_reviewers, crons, etc.
+├── personas/                   # one file per tracked engineer
+│   └── <github-username>.md
+├── patterns.md                 # team review rulebook (the knowledge base)
+├── feature-ownership.md        # who is currently building what
+├── articles/                   # weekly technical writeups from learn-from-codebase
+│   └── YYYY-MM-DD-<slug>.md
+└── proposed/                   # cron output awaiting human merge
+    ├── patterns/               # new-pattern proposals from learn-from-pr-comments
+    │   ├── YYYY-MM-DD.md
+    │   ├── drift-YYYY-MM-DD.md          # from learn-patterns-drift
+    │   ├── backfill-YYYY-MM-DD.md       # from backfill (skipped by auto-review)
+    │   └── backfill-overflow-YYYY-MM-DD.md
+    ├── personas/               # persona update proposals from learn-from-persona-code
+    │   ├── <username>-YYYY-MM-DD.md
+    │   └── <username>-backfill-YYYY-MM-DD.md
+    ├── reconcile-YYYY-MM-DD.md # from track-reconcile (ownership mismatches)
+    ├── .from-pr-comments-last-run      # timestamp marker, not a proposal
+    ├── .from-persona-code-last-run
+    ├── .backfill-state.json            # resumable state for interrupted backfills
+    ├── .auto-review.lock               # prevents concurrent auto-review runs
+    ├── .auto-review-log                # append-only JSON lines, one per decision
+    ├── .auto-review-dry-run-YYYY-MM-DD.md
+    ├── .auto-review-notify-queue.json  # handoff to share subskill
+    └── .notification-log               # append-only log of share sends
 ```
 
 So once you have `data_dir`, everything else is just appending subpaths.
+
+**Notes on the hidden files** (anything starting with a dot):
+
+- Files prefixed with `.` are **state**, not proposals. Skills manage them internally — users shouldn't edit them by hand
+- Files prefixed with `backfill-` are **human-review-only**. The auto-review cron explicitly skips them regardless of mode
+- `*-last-run` markers are ISO 8601 timestamps used by the learning crons to know "what's new since last time"
+- `.auto-review-log` is append-only — never truncate or delete it unless you've also archived the content somewhere, because `rollback` depends on it to reverse past decisions
 
 ## What "storage: global" means
 

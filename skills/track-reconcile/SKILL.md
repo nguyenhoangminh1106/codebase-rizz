@@ -9,7 +9,7 @@ Daily cron. Keeps `feature-ownership.md` accurate by cross-checking it against r
 
 ## Before doing anything
 
-Resolve `<data_dir>` for the current repo via the registry lookup in `../_shared/paths.md`. Iterate the registry when running as a cron; skip repos whose `feature-ownership.md` doesn't exist.
+Run the preflight from `../_shared/paths.md` to resolve `<data_dir>`. When running as a cron, iterate every entry in the registry and run the preflight per repo; skip repos whose `feature-ownership.md` does not exist with a warning.
 
 ## Schedule
 
