@@ -1,6 +1,6 @@
 ---
 name: upgrade
-description: Migrate an already-bootstrapped repo (or every repo in the registry) from an older version of codebase-rizz to the current one. Reads CHANGELOG.md to find out what changed between versions, walks the user through each new feature, updates rizz.config.json, generates any new launchd plists, and writes the new version number. Use whenever the user reinstalls codebase-rizz and wants to take advantage of new features without re-bootstrapping.
+description: Migrate an already-bootstrapped repo (or every repo in the registry) from an older version of codebase-rizz to the current one. Reads CHANGELOG.md to find out what changed between versions, walks the user through each new feature, updates rizz.config.json, refreshes the permissions allowlist in settings.json, regenerates all launchd plists from the current template, and writes the new version number. Use whenever the user reinstalls or updates codebase-rizz and wants everything in sync without re-bootstrapping.
 ---
 
 # upgrade
@@ -80,6 +80,46 @@ If a new cron key is being added and the user opts in (or the default is to enab
 
 Don't run `launchctl load` automatically. Print the commands at the end of the run and let the user paste.
 
+## Refresh permissions allowlist
+
+After walking through all version prompts but **before** writing the updated config, re-merge the permissions allowlist from `../_shared/permissions.md` into `~/.claude/settings.json`. This ensures any new permissions added in newer plugin versions take effect without a full re-bootstrap.
+
+1. Read the current allowlist from `../_shared/permissions.md`
+2. Read the user's existing `~/.claude/settings.json`
+3. Diff the two `permissions.allow` arrays. If the plugin's list has rules not present in the user's settings, show them:
+
+   > The plugin now requires these additional permissions that aren't in your settings.json:
+   >
+   > ```
+   > Bash(git blame:*)
+   > ```
+   >
+   > Merge into `~/.claude/settings.json`? (y/n)
+
+4. If yes, merge (same atomic write as bootstrap — temp + rename). If no, warn that some crons may silently fail
+5. If the allowlist is already up to date, print "Permissions allowlist is current — no changes needed." and move on
+
+## Regenerate launchd plists
+
+After refreshing permissions, regenerate **all existing plists** for this repo using the current template from `../_shared/crons.md`. This picks up template-level fixes (like the `ulimit` fix) without requiring the user to manually edit plist files.
+
+1. For each cron key in the repo's `rizz.config.json.crons`, check if a plist already exists at `~/Library/LaunchAgents/com.codebase-rizz.<slug>.<cron-key>.plist`
+2. If it exists, regenerate it from the current template (overwrite). This picks up any template changes (ulimit, PATH updates, flag changes)
+3. If it doesn't exist (new cron from a version migration), generate it fresh — this is the existing behavior for new crons
+4. After regenerating, print all `launchctl unload` + `launchctl load` commands for the user to run:
+
+   > Your existing cron plists have been regenerated with the latest template. Run these to reload them:
+   >
+   > ```bash
+   > launchctl unload ~/Library/LaunchAgents/com.codebase-rizz.<slug>.from-pr-comments.plist
+   > launchctl load ~/Library/LaunchAgents/com.codebase-rizz.<slug>.from-pr-comments.plist
+   > # ... (one pair per plist)
+   > ```
+
+5. Don't run `launchctl` automatically — print the commands and let the user paste, same as bootstrap
+
+Skip plist regeneration entirely if the user is not on macOS.
+
 ## Writing the updated config
 
 After all prompts are answered for a repo:
@@ -109,9 +149,9 @@ At the very end of a fan-out run, print a table of all repos and what happened t
 ## What upgrade does NOT do
 
 - **Does not remove config keys** — if a future version deprecates a key, leave it in the user's config unless the migration explicitly says to remove it. Silent removals break user trust
-- **Does not delete old launchd plists** — if a cron is renamed or removed, the migration must explicitly say so, and the subskill prints `launchctl unload` + `rm` commands for the user to run manually
+- **Does not delete old launchd plists** — if a cron is renamed or removed, the migration must explicitly say so, and the subskill prints `launchctl unload` + `rm` commands for the user to run manually. (Existing plists ARE regenerated from the current template to pick up fixes, but never deleted)
 - **Does not run any cron** — neither the old ones nor the new ones. First fire is at the scheduled time
-- **Does not touch knowledge files** — never edits `patterns.md`, persona files, or articles. Only config and plists
+- **Does not touch knowledge files** — never edits `patterns.md`, persona files, or articles. Only config, permissions, and plists
 - **Does not auto-answer opt-in prompts**. Every choice is a deliberate user action
 
 ## Edge cases

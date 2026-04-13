@@ -39,7 +39,7 @@ For each key in `crons`, bootstrap generates a plist following this template. Ex
         <string>/usr/bin/env</string>
         <string>bash</string>
         <string>-c</string>
-        <string>cd "<repo path>" &amp;&amp; claude -p "/codebase-rizz:learn-from-pr-comments" --permission-mode dontAsk</string>
+        <string>ulimit -n 2147483646; cd "<repo path>" &amp;&amp; claude -p "/codebase-rizz:learn-from-pr-comments" --permission-mode dontAsk</string>
     </array>
 
     <key>StartCalendarInterval</key>
