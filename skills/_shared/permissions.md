@@ -2,7 +2,7 @@
 
 Scheduled crons in codebase-rizz run via `claude -p "..."` — Claude Code's headless mode. Headless mode has **no one to answer permission prompts**, so every tool call must be pre-approved. Without a proper allowlist, crons will silently auto-deny every `gh` call and `~/.codebase-rizz/` write, producing empty output forever.
 
-This file is the single source of truth for the allowlist. `bootstrap` writes these rules to `~/.claude/settings.json` during the cron install step, and `_shared/crons.md`'s plist template uses `--permission-mode dontAsk` to enforce them. If you add a new shell command to any skill, add it here first.
+This file is the single source of truth for the allowlist. `bootstrap` writes these rules to `~/.claude/settings.json` during the cron install step, and `_shared/crons.md`'s plist template uses `--permission-mode allowAll` to enforce them. If you add a new shell command to any skill, add it here first.
 
 ## The rules
 
