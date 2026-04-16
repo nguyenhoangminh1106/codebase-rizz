@@ -10,7 +10,7 @@ Scheduled crons invoke `claude -p`, which runs in **non-interactive mode**. Ther
 
 To make crons actually work, two things must be true:
 
-1. **The plist's `claude -p` command uses `--permission-mode allowAll`.** This mode auto-denies anything not explicitly in the allow list — making the failure mode loud in logs instead of silent. The plist template below includes this flag
+1. **The plist's `claude -p` command uses `--permission-mode bypassPermissions`.** This mode auto-denies anything not explicitly in the allow list — making the failure mode loud in logs instead of silent. The plist template below includes this flag
 2. **`~/.claude/settings.json` contains the allow list** defined in `permissions.md`. Bootstrap writes this during the cron install step. If the user skipped that step or removed the rules later, the crons will silently fail
 
 If a cron appears to run but nothing shows up in `<data_dir>/proposed/`, the first thing to check is `~/.claude/settings.json` — see `permissions.md` for the full allowlist that must be present.
@@ -39,7 +39,7 @@ For each key in `crons`, bootstrap generates a plist following this template. Ex
         <string>/usr/bin/env</string>
         <string>bash</string>
         <string>-c</string>
-        <string>ulimit -n 2147483646; cd "<repo path>" &amp;&amp; claude -p "/codebase-rizz:learn-from-pr-comments" --permission-mode allowAll</string>
+        <string>ulimit -n 2147483646; cd "<repo path>" &amp;&amp; claude -p "/codebase-rizz:learn-from-pr-comments" --permission-mode bypassPermissions</string>
     </array>
 
     <key>StartCalendarInterval</key>
