@@ -130,10 +130,17 @@ For each event type, build the content that goes inside the message body. The sc
 
 ### `new_article_published`
 
-- **Heading**: `📄 New article: <title>`
-- **One-line summary**: The teaser from the payload (`payload.teaser`)
-- **Body**: A short inline preview — first paragraph or two of the article if it fits, truncated to ~500 characters for Gmail and ~200 for Slack. Include the word count as a small context line ("2,841 words · 8 min read")
-- **Link**: `payload.path` — the absolute path to the article markdown file (Gmail users open it locally; Slack users see the path as a clickable code block they can copy)
+Render the **full article inline** — readers should not have to leave the message to read it.
+
+1. Read the markdown file at `payload.path`
+2. **Heading**: `📄 <title>` (drop the "New article:" prefix — the heading is the title)
+3. **Byline** (context block in Slack, muted `<p>` in Gmail): `codebase-rizz · <repo slug> · <date> · <word_count> words · ~<minutes> min read`
+4. **Body**: the rendered article:
+   - **Gmail**: convert markdown to inline-styled HTML. Headings → `<h2>/<h3>`, paragraphs → `<p>`, lists → `<ul>/<ol>`, fenced code → `<pre><code>`, blockquotes → `<blockquote>`, preserve bold/italic/inline-code. Use the same outer container/inline CSS as the generic template
+   - **Slack**: emit one Block Kit block per top-level markdown element. Headings → `section` with `*bold*` mrkdwn. Paragraphs → `section` mrkdwn (convert `**x**` → `*x*`, keep `_italic_`, inline code as `` `x` ``). Fenced code → `section` wrapping the code in triple backticks. Blockquotes → `section` with each line prefixed by `> `. Lists → single `section` with `•` bullets (or `1.` for ordered). Slack caps at 50 blocks and ~3000 chars per text field — if the article exceeds either, split long paragraphs across multiple sections and, if still over budget, post the overflow as threaded replies to the first message rather than truncating
+5. **Footer link**: `payload.path` rendered as a secondary "View source file" button/link — optional, since the article body is already in the message
+
+The teaser (`payload.teaser`) is still used for the email preview line / Slack notification snippet, but it is not the body of the message.
 
 ### `auto_review_complete`
 

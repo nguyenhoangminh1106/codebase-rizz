@@ -90,7 +90,7 @@ The `.` prefix keeps it as state (not a proposal the user reviews). Every skill 
 
 Producer: `learn-from-codebase` after writing an article.
 
-Consumer behavior: build a message with the title as the subject, the teaser as the preview, and the article path as a clickable "View full article" button. In Gmail, the body can include the first few paragraphs inline; in Slack, use Block Kit with a section block for the teaser and an action block with the "View" button.
+Consumer behavior: read the markdown file at `payload.path` and render the **full article body** inline in the message — no truncation, no teaser-only preview. The reader should be able to read the whole piece without leaving the notification. In Gmail, convert the markdown to inline-styled HTML (headings, paragraphs, lists, code fences, blockquotes). In Slack, emit one Block Kit section per markdown element and split across threaded replies if the article exceeds Slack's 50-block / 3000-char-per-field limits. Keep the "View source file" button at the end for readers who want to open the `.md` locally, but the button is now a secondary affordance — the article itself is the message.
 
 ### `auto_review_complete`
 
