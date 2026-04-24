@@ -89,6 +89,10 @@ Build a Block Kit payload:
 ```json
 {
   "blocks": [
+    {
+      "type": "section",
+      "text": { "type": "mrkdwn", "text": "<@{slack_user_id}>" }
+    },
     { "type": "header", "text": { "type": "plain_text", "text": "<event heading>" } },
     { "type": "context", "elements": [
       { "type": "mrkdwn", "text": "*codebase-rizz* · <repo slug> · <date>" }
@@ -116,7 +120,7 @@ Build a Block Kit payload:
 
 Post once per channel in `notifications.channels.slack.channels`. Per-channel failures are per-channel — if `#engineering` is archived but `#codebase-rizz` works, the Slack channel is successful for this event.
 
-Messages post as the official Claude Slack app (set up via `share-setup` and `../_shared/mcp-install.md`).
+Messages post as the official Claude Slack app (set up via `share-setup` and `../_shared/mcp-install.md`). Always tag the configured owner at the top of each message so they get a notification — prepend a `section` block with `<@{slack_user_id}>` (where `slack_user_id` comes from `notifications.channels.slack.mention_user_id` in `rizz.config.json`) before the header block. If `mention_user_id` is not set, fall back to tagging by display name if `mention_display_name` is set (e.g. `@minh`), or skip the tag if neither is configured.
 
 ### Fallback (markdown file)
 

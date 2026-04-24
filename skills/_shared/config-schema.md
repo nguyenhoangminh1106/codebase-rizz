@@ -41,7 +41,9 @@ The file lives inside the repo's data directory regardless of storage mode — i
       },
       "slack": {
         "enabled": true,
-        "channels": ["#engineering", "#codebase-rizz"]
+        "channels": ["#engineering", "#codebase-rizz"],
+        "mention_user_id": "U01AB2CD3EF",
+        "mention_display_name": "minh"
       }
     },
     "events": {
@@ -89,6 +91,8 @@ The `notifications` block is structured so every channel is opt-in independently
 - **`channels.gmail.recipients`** — list of email addresses to send to. Each recipient gets the same message. Empty or missing = Gmail channel is a no-op even if `enabled: true`
 - **`channels.slack.enabled`** — whether to post via the Slack MCP. Requires the user to have created a Slack app in their workspace, authenticated the MCP, and granted it permission to post to the target channels. Messages are posted as the app/bot, not as the user
 - **`channels.slack.channels`** — list of Slack channel names (with or without `#`) or user DMs to post to
+- **`channels.slack.mention_user_id`** — optional Slack user ID (e.g. `U01AB2CD3EF`) to `@mention` at the top of each message. Takes precedence over `mention_display_name`. Preferred because user IDs are stable across renames
+- **`channels.slack.mention_display_name`** — optional fallback display name (without `@`) to mention if `mention_user_id` is not set. Less reliable than the ID form — use only if you don't know your Slack user ID
 - **`events`** — which classes of event trigger a send. Every subskill that wants to notify something reads the matching key and only proceeds if it's true. Adding a new event means adding both a new key here and respecting it in the subskill that fires the event
 
 When a notification is sent, the `share/` subskill logs each delivery (per channel, per recipient, per event) to `<data_dir>/proposed/.notification-log` so failures don't get lost.

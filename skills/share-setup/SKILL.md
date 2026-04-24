@@ -54,12 +54,16 @@ Then:
 Print:
 
 > **Slack**
-> - Sender: messages post **as the Claude Slack app** in your workspace, using the connection between your Slack account and your Claude account. Recipients see them as coming from "Claude," not from you personally and not from a custom bot
+> - Sender: messages post **as the Claude Slack app** in your workspace, using the connection between your Slack account and your Claude account. Recipients see them as coming from "Claude," not from you personally and not from a custom bot — but we'll tag you at the top of each message so you get notified
 > - Requires: a workspace admin to have installed the Claude app from the Slack Marketplace, your Slack ↔ Claude connection in the App Home tab, the `slack@claude-plugins-official` plugin installed in Claude Code, and the Claude app invited to any channel you want posts to go to
 > - See `../_shared/mcp-install.md` for the full setup flow
 
 Then follow the same detect / already-installed / not-installed flow as Gmail:
 - Detected → ask y/n → collect channel list (with or without `#`)
+- Then ask: "What's your Slack user ID or display name so I can tag you in each message? (e.g. `U01AB2CD3EF` or `@minh` — press enter to skip)"
+  - If they provide a Slack user ID (starts with `U` followed by alphanumerics): save as `notifications.channels.slack.mention_user_id`
+  - If they provide a display name (with or without `@`): strip the `@` and save as `notifications.channels.slack.mention_display_name`
+  - If they skip: save neither; messages will post without a mention
 - Not detected → offer install instructions, pause if yes
 
 ### Neither
